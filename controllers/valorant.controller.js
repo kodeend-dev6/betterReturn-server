@@ -1,17 +1,17 @@
 const config = require("../config/config");
-const csgoTable = config.db.csgoTableUrl;
+const valorantTable = config.db.valorantTableUrl;
 const apiKey = config.key.apiKey
 const axios = require('axios');
 
 
-const getAllCsgoMatches = async (req, res) => {
+const getAllValorantMatches = async (req, res) => {
   try {
 
     const headers = {
       'Authorization': `Bearer ${apiKey}`,
     };
 
-    const response = await axios.get(csgoTable, { headers });
+    const response = await axios.get(valorantTable, { headers });
     const data = response.data;
 
     // Process and send the data as a JSON response
@@ -23,7 +23,7 @@ const getAllCsgoMatches = async (req, res) => {
 }
 
 
-const getAllCsgoMatchesByDate = async (req, res) => {
+const getAllValorantMatchesByDate = async (req, res) => {
   try {
 
     const { value } = req.query;
@@ -34,7 +34,7 @@ const getAllCsgoMatchesByDate = async (req, res) => {
       return res.status(400).json({ error: 'Both field and value parameters are required.' });
     }
 
-    const url = `${csgoTable}?filterByFormula=({${field}}='${value}')`;
+    const url = `${valorantTable}?filterByFormula=({${field}}='${value}')`;
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -43,6 +43,7 @@ const getAllCsgoMatchesByDate = async (req, res) => {
     const allData = response.data.records;
 
     const filteredData = allData.filter((item) => item.fields.upload === true)
+    console.log(filteredData)
 
 
     res.json(filteredData);
@@ -52,12 +53,13 @@ const getAllCsgoMatchesByDate = async (req, res) => {
   }
 };
 
-const getSingleCsgoMatch = async (req, res) => {
+const getSingleValorantMatch = async (req, res) => {
   try {
 
     const matchID = req.params.matchID;
+    console.log(matchID)
 
-    const url = `${csgoTable}/${matchID}`;
+    const url = `${valorantTable}/${matchID}`;
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -74,4 +76,4 @@ const getSingleCsgoMatch = async (req, res) => {
 };
 
 
-module.exports = { getAllCsgoMatches, getSingleCsgoMatch, getAllCsgoMatchesByDate}
+module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate}

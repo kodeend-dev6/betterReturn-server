@@ -1,6 +1,6 @@
 const config = require("../config/config");
 const soccerTable = config.db.soccerTableUrl;
-const apiKey = config.key.apiKey
+const apiKey = config.key.apiKey;
 const axios = require('axios');
 
 
@@ -76,4 +76,25 @@ const getSingleSoccerMatch = async (req, res) => {
 };
 
 
-module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate}
+const createNewMatch = async (req, res) => {
+  try {
+    const response = await axios.post(
+      `${soccerTable}`,
+      req.body,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error creating record:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+}
+
+
+module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch }
