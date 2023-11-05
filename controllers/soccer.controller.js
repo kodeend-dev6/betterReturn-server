@@ -43,7 +43,6 @@ const getAllSoccerMatchesByDate = async (req, res) => {
     const allData = response.data.records;
 
     const filteredData = allData.filter((item) => item.fields.upload === true)
-    console.log(filteredData)
 
 
     res.json(filteredData);
@@ -57,7 +56,6 @@ const getSingleSoccerMatch = async (req, res) => {
   try {
 
     const matchID = req.params.matchID;
-    console.log(matchID)
 
     const url = `${soccerTable}/${matchID}`;
     const headers = {
@@ -77,24 +75,75 @@ const getSingleSoccerMatch = async (req, res) => {
 
 
 const createNewMatch = async (req, res) => {
+  const { fields } = req.body;
+
+  const data = { fields }
+
   try {
-    const response = await axios.post(
-      `${soccerTable}`,
-      req.body,
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await axios.post(soccerTable, data, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-    res.json(response.data);
+    console.log('Record added successfully:', response.data);
+    res.status(201).send('Record added successfully to Airtable.');
   } catch (error) {
-    console.error('Error creating record:', error);
-    res.status(500).json({ error: 'An error occurred' });
+    console.error('Error adding record:', error);
+    res.status(500).send('Error adding record to Airtable.');
   }
-}
+};
 
 
-module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch }
+const deleteOneMatch = async (req, res) => {
+  const { recordId } = req.params;
+
+  try {
+    const airtableURL = `${soccerTable}/${recordId}`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await axios.delete(airtableURL, { headers });
+
+    if (response.status === 200) {
+      res.status(204).json({ message: 'Record deleted successfully' });
+    } else {
+      res.status(response.status).json(response.data);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting the record' });
+  }
+};
+
+const updateOneMatch = async (req, res) => {
+  const { recordId } = req.params;
+  const { fields } = req.body;
+
+
+  try {
+    const airtableURL = `${soccerTable}/${recordId}`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const data = { fields };
+
+    const response = await axios.patch(airtableURL, data, { headers });
+
+    if (response.status === 200) {
+      res.status(200).json({ message: 'Record updated successfully' });
+    } else {
+      res.status(response.status).json(response.data);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating the record' });
+  }
+};
+
+
+
+module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch, deleteOneMatch, updateOneMatch }

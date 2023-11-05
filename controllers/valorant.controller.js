@@ -75,5 +75,75 @@ const getSingleValorantMatch = async (req, res) => {
   }
 };
 
+const createNewValorantMatch = async (req, res) => {
 
-module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate}
+  const { fields } = req.body;
+  const data = { fields };
+
+  try {
+    const response = await axios.post(valorantTable, data, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    res.status(201).send('Record added successfully to Airtable.');
+  } catch (error) {
+    console.error('Error adding record:', error);
+    res.status(500).send('Error adding record to Airtable.');
+  }
+};
+
+
+const updateOneValorantMatch = async (req, res) => {
+  const { recordId } = req.params;
+  const {fields} = req.body;
+  
+
+  try {
+    const airtableURL = `${valorantTable}/${recordId}`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const data = { fields };
+
+    const response = await axios.patch(airtableURL, data, { headers });
+
+    if (response.status === 200) {
+      res.status(200).json({ message: 'Record updated successfully' });
+    } else {
+      res.status(response.status).json(response.data);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating the record' });
+  }
+};
+
+const deleteOneValorantMatch = async (req, res) => {
+  const { recordId } = req.params;
+
+  try {
+    const airtableURL = `${valorantTable}/${recordId}`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await axios.delete(airtableURL, { headers });
+
+    if (response.status === 200) {
+      res.status(204).json({ message: 'Record deleted successfully' });
+    } else {
+      res.status(response.status).json(response.data);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting the record' });
+  }
+};
+
+
+
+
+module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate, createNewValorantMatch, updateOneValorantMatch, deleteOneValorantMatch}
