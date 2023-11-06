@@ -29,12 +29,16 @@ const getAllCsgoMatchesByDate = async (req, res) => {
     const { value } = req.query;
     const field = "Date";
 
+    const dateComponents = value.split("-");
+    const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
 
-    if (!field || !value) {
+
+
+    if (!field || !date) {
       return res.status(400).json({ error: 'Both field and value parameters are required.' });
     }
 
-    const url = `${csgoTable}?filterByFormula=({${field}}='${value}')`;
+    const url = `${csgoTable}?filterByFormula=({${field}}='${date}')`;
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -94,8 +98,8 @@ const createNewCsgoMatch = async (req, res) => {
 
 const updateOneCsgoMatch = async (req, res) => {
   const { recordId } = req.params;
-  const {fields} = req.body;
-  
+  const { fields } = req.body;
+
 
   try {
     const airtableURL = `${csgoTable}/${recordId}`;
