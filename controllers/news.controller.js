@@ -84,5 +84,53 @@ const createNewNews = async (req, res) => {
     }
 }
 
+const updateNews = async (req, res) => {
+    const { newsID } = req.params;
+    const { fields } = req.body;
 
-module.exports = { allNews, getNewsByDate, getSingleNews, createNewNews }
+
+    try {
+        const airtableURL = `${newsTable}/${newsID}`;
+        const headers = {
+            Authorization: `Bearer ${apiKey}`,
+        };
+
+        const data = { fields };
+
+        const response = await axios.patch(airtableURL, data, { headers });
+
+        if (response.status === 200) {
+            res.status(200).json({ message: 'Record updated successfully' });
+        } else {
+            res.status(response.status).json(response.data);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error updating the record' });
+    }
+};
+
+const deleteNews = async (req, res) => {
+    const { newsID } = req.params;
+
+    try {
+        const airtableURL = `${newsTable}/${newsID}`;
+        const headers = {
+            Authorization: `Bearer ${apiKey}`,
+        };
+
+        const response = await axios.delete(airtableURL, { headers });
+
+        if (response.status === 200) {
+            res.status(204).json({ message: 'Record deleted successfully' });
+        } else {
+            res.status(response.status).json(response.data);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error deleting the record' });
+    }
+};
+
+
+module.exports = { allNews, getNewsByDate, getSingleNews, createNewNews, updateNews, deleteNews }
