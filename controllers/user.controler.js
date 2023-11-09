@@ -5,6 +5,7 @@ const axios = require("axios");
 const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 const emailCheck = require("../helper/emailCheck");
+const sendEmail = require("../helper/sendEmail");
 
 const createNewUser = async (req, res) => {
   const { fields } = req.body;
@@ -29,7 +30,10 @@ const createNewUser = async (req, res) => {
     if (emailExists) {
       return res
         .status(400)
-        .json({ success: false, message: "Email already exists" });
+        .json({
+          success: false,
+          message: "User already exists with this email",
+        });
     }
 
     const data = { fields };
@@ -40,6 +44,13 @@ const createNewUser = async (req, res) => {
         "Content-Type": "application/json",
       },
     });
+
+    // const emailResponse = await sendEmail({
+    //   email: response?.data?.fields?.Email,
+    //   subject: "Email Verification",
+    // });
+    
+    // console.log(emailResponse);
 
     return res.status(201).json({
       success: true,
