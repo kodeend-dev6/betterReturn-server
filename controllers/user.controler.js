@@ -1,60 +1,64 @@
 const config = require("../config/config");
 const userTable = config.db.userTableUrl;
 const apiKey = config.key.apiKey;
-const axios = require('axios');
-const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid')
-const emailCheck = require('../helper/emailCheck');
+const axios = require("axios");
+const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
+const emailCheck = require("../helper/emailCheck");
 
 const createNewUser = async (req, res) => {
-    const { fields } = req.body;
-    
-    const { Email, Name, Password } = fields;
+  const { fields } = req.body;
 
-    if (!Email || !Name || !Password) {
-        return res.status(400).json({ error: 'Missing email, name, or password' });
+  const { Email, Name, Password, Country_code, Country, Mobile } = fields;
+
+  if (!Email || !Name || !Password || !Country_code || !Country || !Mobile) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing email, name, password, country, country_code or mobile",
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(Password, 10);
+
+  fields.Password = hashedPassword;
+
+  try {
+    // Check if the email already exists
+    const emailExists = await emailCheck.isUserEmailExists(Email);
+
+    if (emailExists) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already exists" });
     }
 
-    const hashedPassword = await bcrypt.hash(Password, 10)
+    const data = { fields };
 
-    fields.Password = hashedPassword
+    const response = await axios.post(userTable, data, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-    try {
-        // Check if the email already exists
-        const emailExists = await emailCheck.isUserEmailExists(Email);
-
-        if (emailExists) {
-            return res.status(400).json({ error: 'Email already exists' });
-        }
-
-        const data = {fields}
-
-        const response = await axios.post(userTable, data, {
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            }
-        })
-
-        return res.status(201).json({ message: 'User registered successfully' });
-    } catch (error) {
-        return res.status(500).json({ error: 'Internal server error' });
-    }
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      data: response.data,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
 };
 
-// const apiKey = 'YOUR_AIRTABLE_API_KEY';
-// const baseId = 'YOUR_AIRTABLE_BASE_ID';
-// const tableName = 'Users'; // Change this to your Airtable table name
-
-// // Define Airtable API endpoint
-// const airtableUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
-
 // Middleware to check if a user is authenticated
-const authenticateUser = async (req, res, next) => {
-  const { email, password } = req.body;
-
+const authenticateUser = async ({ email, password }) => {
   if (!email || !password) {
-    return res.status(401).json({ message: 'Email and password are required.' });
+    return res
+      .status(401)
+      .json({ success: false, message: "Email and password are required." });
   }
 
   try {
@@ -64,55 +68,57 @@ const authenticateUser = async (req, res, next) => {
         Authorization: `Bearer ${apiKey}`,
       },
       params: {
-        filterByFormula: `Eamil = "${email}"`,
+        filterByFormula: `Email = "${email}"`,
       },
     });
 
     const user = response.data.records[0];
 
     if (!user) {
-      return res.status(401).json({ message: 'User not found.' });
+      return res
+        .status(401)
+        .json({ success: false, message: "User not found." });
     }
 
     // Compare the hashed password
     if (await bcrypt.compare(password, user.fields.Password)) {
-      // User is authenticated
-      next();
+      return { isAuthenticated: true, data: user };
     } else {
-      return res.status(401).json({ message: 'Authentication failed. Incorrect password.' });
+      return { isAuthenticated: false, data: null };
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Internal server error.' });
+    return res.status(500).json({ message: "Internal server error." });
   }
 };
 
 // Login endpoint
-// app.post('/login', authenticateUser, (req, res) => {
-//   // Authentication successful, you can perform further actions here
-//   res.json({ message: 'Login successful!' });
-// });
+const userLogin = async (req, res, next) => {
+  const { isAuthenticated, data } = await authenticateUser(req.body);
 
-const userLogin = authenticateUser;  (req, res) =>{
-
-    res.json({ message: 'Login successful!' });
-}
-
+  if (!isAuthenticated) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Email or Password mismatched!" });
+  }
+  return res
+    .status(200)
+    .json({ success: true, message: "User logged in.", data });
+};
 
 const getAllUser = async (req, res) => {
-    try {
-        const response = await axios.get(userTable, {
-            headers: {
-                Authorization: `Bearer ${apiKey}`
-            }
-        })
-        const data = await response.data.records;
-        res.status(200).json(data);
-    } catch (error) {
-        console.error("Cant't fetch user from airtable.", error);
-        res.status(500).json({ message: "Can't fetch all user." });
-    }
-}
+  try {
+    const response = await axios.get(userTable, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+    const data = await response.data.records;
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Cant't fetch user from airtable.", error);
+    res.status(500).json({ message: "Can't fetch all user." });
+  }
+};
 
-
-module.exports = { createNewUser, getAllUser, userLogin }
+module.exports = { createNewUser, getAllUser, userLogin };
