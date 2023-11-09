@@ -6,6 +6,7 @@ const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 const emailCheck = require("../helper/emailCheck");
 const sendEmail = require("../helper/sendEmail");
+const { isFreetierUsed } = require("../helper/checkFreeTier");
 
 const createNewUser = async (req, res) => {
   const { fields } = req.body;
@@ -132,4 +133,52 @@ const getAllUser = async (req, res) => {
   }
 };
 
-module.exports = { createNewUser, getAllUser, userLogin };
+const buyPlan = async (req, res) => {
+  try {
+    const userID = req.params.userID;
+    const { fields } = req.body;
+
+    const FreeTierUsed = await isFreetierUsed(fields.Email);
+   
+    if (!FreeTierUsed && fields.Plan_name === 'A') {
+      return res.send("You have already used the free plan.");
+    }
+
+    const airtableURL = `${userTable}/${userID}`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const today = new Date();
+    const nextWeek = new Date(today);
+    const freeEndDate = nextWeek.setDate(today.getDate() + 7)
+
+    const data = { fields };
+
+    data.fields["Plan_start_date"] = today.toISOString();
+
+    if (fields.Plan_name === 'A') {
+      data.fields["FreeTier"] = true;
+      data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
+    } else {
+      data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
+    }
+
+    console.log(data)
+
+    const response = await axios.patch(airtableURL, data, { headers });
+
+    if (response.status === 200) {
+      res.status(200).json({ message: 'Your plan is activated.' });
+    } else {
+      res.status(response.status).json(response.data);
+    }
+
+
+  } catch (error) {
+    console.error("Buy plan error");
+    res.status(500).json({ message: error.message });
+  }
+}
+
+module.exports = { createNewUser, getAllUser, userLogin, buyPlan };
