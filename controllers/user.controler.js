@@ -7,6 +7,9 @@ const { v4: uuidv4 } = require("uuid");
 const emailCheck = require("../helper/emailCheck");
 const sendEmail = require("../helper/sendEmail");
 const { isFreetierUsed } = require("../helper/checkFreeTier");
+const ApiError = require("../utils/errors/ApiError");
+const catchAsync = require("../utils/errors/catchAsync");
+const sendResponse = require("../utils/sendResponse");
 
 const createNewUser = async (req, res) => {
   const { fields } = req.body;
@@ -29,12 +32,10 @@ const createNewUser = async (req, res) => {
     const emailExists = await emailCheck.isUserEmailExists(Email);
 
     if (emailExists) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "User already exists with this email",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "User already exists with this email",
+      });
     }
 
     const data = { fields };
@@ -50,7 +51,7 @@ const createNewUser = async (req, res) => {
     //   email: response?.data?.fields?.Email,
     //   subject: "Email Verification",
     // });
-    
+
     // console.log(emailResponse);
 
     return res.status(201).json({
@@ -99,24 +100,25 @@ const authenticateUser = async ({ email, password }) => {
       return { isAuthenticated: false, data: null };
     }
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ message: "Internal server error." });
   }
 };
 
 // Login endpoint
-const userLogin = async (req, res, next) => {
+const userLogin = catchAsync(async (req, res, next) => {
   const { isAuthenticated, data } = await authenticateUser(req.body);
 
   if (!isAuthenticated) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email or Password mismatched!" });
+    throw new ApiError(401, "Email or Password mismatched!");
   }
-  return res
-    .status(200)
-    .json({ success: true, message: "User logged in.", data });
-};
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User logged in.",
+    data,
+  });
+});
 
 const getAllUser = async (req, res) => {
   try {
@@ -139,8 +141,8 @@ const buyPlan = async (req, res) => {
     const { fields } = req.body;
 
     const FreeTierUsed = await isFreetierUsed(fields.Email);
-   
-    if (!FreeTierUsed && fields.Plan_name === 'A') {
+
+    if (!FreeTierUsed && fields.Plan_name === "A") {
       return res.send("You have already used the free plan.");
     }
 
@@ -151,34 +153,32 @@ const buyPlan = async (req, res) => {
 
     const today = new Date();
     const nextWeek = new Date(today);
-    const freeEndDate = nextWeek.setDate(today.getDate() + 7)
+    const freeEndDate = nextWeek.setDate(today.getDate() + 7);
 
     const data = { fields };
 
     data.fields["Plan_start_date"] = today.toISOString();
 
-    if (fields.Plan_name === 'A') {
+    if (fields.Plan_name === "A") {
       data.fields["FreeTier"] = true;
       data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
     } else {
       data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
     }
 
-    console.log(data)
+    console.log(data);
 
     const response = await axios.patch(airtableURL, data, { headers });
 
     if (response.status === 200) {
-      res.status(200).json({ message: 'Your plan is activated.' });
+      res.status(200).json({ message: "Your plan is activated." });
     } else {
       res.status(response.status).json(response.data);
     }
-
-
   } catch (error) {
     console.error("Buy plan error");
     res.status(500).json({ message: error.message });
   }
-}
+};
 
 module.exports = { createNewUser, getAllUser, userLogin, buyPlan };
