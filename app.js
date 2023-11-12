@@ -10,8 +10,9 @@ const soccerRouter = require("./routes/soccer.route");
 const csgoRouter = require("./routes/csgo.route");
 const valorantRouter = require("./routes/valorant.route");
 const newsRouter = require("./routes/news.route");
+const authRouter = require("./routes/auth.route");
 const userRouter = require("./routes/user.route");
-const emailRouter = require("./routes/email.route");
+const testRouter = require("./routes/test.route");
 
 const app = express();
 
@@ -30,8 +31,9 @@ app.use("/api/soccer", soccerRouter);
 app.use("/api/csgo", csgoRouter);
 app.use("/api/valorant", valorantRouter);
 app.use("/api/news", newsRouter);
+app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
-app.use("/api/email", emailRouter);
+app.use("/api/test", testRouter);
 
 // Global Error Handler
 app.use(globalErrorHandler);

@@ -1,16 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const { createNewUser, getAllUser, userLogin, buyPlan, resetPassword, forgetPassword } = require('../controllers/user.controler');
+const { getAllUser, buyPlan } = require("../controllers/user.controller");
 
 router.get("/", getAllUser);
-router.post('/registration', createNewUser);
-router.post('/login', userLogin);
-
-
-
 router.put("/plan/:userID", buyPlan);
-router.post("/reset-password", resetPassword);
-router.post("/forget-password", forgetPassword);
 
 module.exports = router;
