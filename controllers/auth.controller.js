@@ -91,7 +91,7 @@ const userLogin = catchAsync(async (req, res, next) => {
 });
 
 //   Forget Password
-const forgetPassword = catchAsync(async (req, res) => {
+const forgotPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
   const user = await findUser(email);
 
@@ -141,6 +141,46 @@ const forgetPassword = catchAsync(async (req, res) => {
   });
 });
 
+// Verify OTP
+const verifyOTP = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await findUser(email);
+
+  if (!user?.fields?.OTP) throw new ApiError(400, "OTP not found.");
+
+  const isMatched = bcrypt.compareSync(String(otp), user?.fields?.OTP);
+
+  if (!isMatched) {
+    throw new ApiError(401, "OTP mismatched.");
+  }
+
+  if (user?.fields?.OTPExpires < Date.now()) {
+    throw new ApiError(411, "OTP expired.");
+  }
+
+  const options = {
+    method: "PATCH",
+    url: `${userTable}/${user?.id}`,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    data: { fields: { OTP: "", OTPExpires: "" } },
+  };
+
+  try {
+    await axios.request(options);
+  } catch (error) {
+    console.log(error?.response?.data);
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "OTP verified.",
+  });
+});
+
 // Reset Password
 const resetPassword = catchAsync(async (req, res) => {
   const { fields } = req.body;
@@ -180,6 +220,7 @@ const resetPassword = catchAsync(async (req, res) => {
 module.exports = {
   createNewUser,
   userLogin,
-  forgetPassword,
+  forgotPassword,
+  verifyOTP,
   resetPassword,
 };
