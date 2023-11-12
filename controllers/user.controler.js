@@ -206,8 +206,8 @@ const resetPassword = catchAsync(async (req, res) => {
     }
 
     // otp section
-    const OTP = 12333; 
-    
+    const OTP = 12333;
+
     const Password = fields.Password;
     const hashedPassword = await bcrypt.hash(Password, 10);
 
@@ -227,8 +227,30 @@ const resetPassword = catchAsync(async (req, res) => {
 const forgetPassword = async (req, res) => {
   try {
 
-  } catch (error) {
+    const { Email } = req.body;
 
+    const Response = await axios.get(userTable, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      params: {
+        filterByFormula: `{Email} = '${Email}'`,
+      },
+    });
+
+
+
+    if (Response.data.records.length > 0) {
+      
+      // we have to send email for reset password
+
+      res.status(200).json({ message: 'Check your email to reset password' });
+    } else {
+      res.status(404).json({ message: 'Email not found.' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error.' });
   }
 }
 
