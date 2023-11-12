@@ -1,33 +1,38 @@
 const axios = require("axios");
+const { URLSearchParams } = require("url");
+const fetch = require("node-fetch");
+const encodedParams = new URLSearchParams();
 
 const sendEmail = async ({ email, subject, properties }) => {
-  const template_id = "Wn2sfD";
+  const template_id = "Rm6bzc";
   const apiKey = process.env.EMAIL_API_KEY;
-  const endpoint = `https://a.klaviyo.com/api/v1/email-template/${template_id}/send?api_key=${apiKey}`;
 
-  const data = new URLSearchParams();
-  data.append("from_email", "info@betterreturn.net");
-  data.append("from_name", "Better Return");
-  data.append("subject", "Email Verification");
-  data.append("to", JSON.stringify([{ name: "Dev 4", email: email }]));
-  data.append(
-    "context",
-    JSON.stringify({ name: "George Washington", state: "VA" })
-  );
+  // const options = {
+  //   method: "POST",
+  //   url: "https://a.klaviyo.com/api/template-render/",
+  //   headers: {
+  //     accept: "application/json",
+  //     revision: "2023-10-15",
+  //     "content-type": "application/json",
+  //     Authorization: `Klaviyo-API-Key ${apiKey}`,
+  //   },
+  //   data: {
+  //     data: {
+  //       type: "template",
+  //       attributes: { context: { newKey: "New Value" } },
+  //       id: template_id,
+  //     },
+  //   },
+  // };
 
-  const headers = {
-    accept: "application/json",
-    "content-type": "application/x-www-form-urlencoded",
-  };
-
-  try {
-    const response = await axios.post(endpoint, data, { headers });
-    console.log("Email sent:", response.data);
-    return response?.data;
-  } catch (error) {
-    console.error("Email sending failed:", error);
-    throw error;
-  }
+  axios
+    .request(options)
+    .then(function (response) {
+      console.log(response.data);
+    })
+    .catch(function (error) {
+      console.error(error);
+    });
 };
 
 module.exports = sendEmail;
