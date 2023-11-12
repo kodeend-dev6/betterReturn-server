@@ -4,6 +4,7 @@ require("dotenv").config();
 const sendResponse = require("./utils/sendResponse");
 const globalErrorHandler = require("./utils/errors/globalErrorHandler");
 const morgan = require("morgan");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const soccerRouter = require("./routes/soccer.route");
 const csgoRouter = require("./routes/csgo.route");
@@ -34,6 +35,41 @@ app.use("/api/email", emailRouter);
 
 // Global Error Handler
 app.use(globalErrorHandler);
+
+
+
+
+
+// this route for stripe payment intent
+app.post('/create-payment-intent', async (req, res) => {
+  // const booking = req.body;
+  // const price = booking.price;
+  const price = req.body.price;
+  const amount = price * 100;
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    currency: 'usd',
+    amount: amount,
+    description: 'Software development services',
+    shipping: {
+      name: 'Jenny Rosen',
+      address: {
+        line1: '510 Townsend St',
+        postal_code: '98140',
+        city: 'San Francisco',
+        state: 'CA',
+        country: 'US',
+      },
+    },
+    "payment_method_types": [
+      "card"
+    ]
+  });
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
+});
+
 
 // 404 Error handler
 app.all("*", (req, res) => {
