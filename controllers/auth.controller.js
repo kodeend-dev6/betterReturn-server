@@ -34,7 +34,8 @@ const createNewUser = catchAsync(async (req, res) => {
     throw new ApiError(403, "User already exists with this email");
   }
 
-  const hashedPassword = await bcrypt.hash(Password, 10);
+  const hashedPassword = bcrypt.hashSync(Password, 10);
+
   fields.Password = hashedPassword;
   const { otp, hashedOTP, otpExpires } = generateOTP();
   fields.OTP = hashedOTP;
@@ -55,12 +56,12 @@ const createNewUser = catchAsync(async (req, res) => {
 
   // console.log(emailResponse);
 
-  delete response?.data?.fields?.Password;
-
   const accessToken = getToken({
     id: response.data.id,
     email: response.data.fields.Email,
   });
+
+  delete response?.data?.fields?.Password;
 
   sendResponse(res, {
     statusCode: 201,
