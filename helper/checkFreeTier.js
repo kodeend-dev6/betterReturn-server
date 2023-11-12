@@ -15,14 +15,11 @@ async function isFreetierUsed(email) {
 
         );
 
-        // console.log(response.data.records)
+        const existsUser = response.data.records.find(user => user.fields.Email === email);
 
-        const existsUser = response.data.records.find(user => user.fields.Email === email)
-
-
-        if (existsUser.FreeTier){
+        if (existsUser.FreeTier) {
             return true
-        }else{
+        } else {
             return false
         };
     } catch (error) {
