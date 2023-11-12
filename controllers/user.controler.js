@@ -149,7 +149,7 @@ const buyPlan = async (req, res) => {
 
     const FreeTierUsed = await isFreetierUsed(fields.Email);
 
-    if (!FreeTierUsed && fields.Plan_name === "A") {
+    if (!FreeTierUsed) {
       return res.send("You have already used the free plan.");
     }
 
@@ -166,14 +166,13 @@ const buyPlan = async (req, res) => {
 
     data.fields["Plan_start_date"] = today.toISOString();
 
-    if (fields.Plan_name === "A") {
+    if (fields.Plan_name === "Basic") {
       data.fields["FreeTier"] = true;
       data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
     } else {
       data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
     }
 
-    console.log(data);
 
     const response = await axios.patch(airtableURL, data, { headers });
 
@@ -188,4 +187,50 @@ const buyPlan = async (req, res) => {
   }
 };
 
-module.exports = { createNewUser, getAllUser, userLogin, buyPlan };
+// Endpoint to initiate the password reset process
+const resetPassword = catchAsync(async (req, res) => {
+  const { fields } = req.body;
+  const field = "Email";
+
+  try {
+    const url = `${userTable}?filterByFormula=({${field}}='${fields.Email}')`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await axios.get(url, { headers });
+    const userRecord = response.data.records[0];
+
+    if (!userRecord) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // otp section
+    const OTP = 12333; 
+    
+    const Password = fields.Password;
+    const hashedPassword = await bcrypt.hash(Password, 10);
+
+    fields.Password = hashedPassword;
+
+    const data = { fields };
+    await axios.patch(`${userTable}/${userRecord.id}`, data, { headers });
+
+    return res.status(200).json({ message: 'Password reset Successfull' });
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+const forgetPassword = async (req, res) => {
+  try {
+
+  } catch (error) {
+
+  }
+}
+
+
+module.exports = { createNewUser, getAllUser, userLogin, buyPlan, resetPassword, forgetPassword };
