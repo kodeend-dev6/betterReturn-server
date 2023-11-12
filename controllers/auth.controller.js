@@ -8,9 +8,11 @@ const ApiError = require("../utils/errors/ApiError");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
 const { getToken } = require("../middleware/token");
-
-const crypto = require("crypto");
-const { authenticateUser, findUser } = require("../helper/user.helper");
+const {
+  authenticateUser,
+  findUser,
+  generateOTP,
+} = require("../helper/user.helper");
 
 // User Registration
 const createNewUser = catchAsync(async (req, res) => {
@@ -25,10 +27,6 @@ const createNewUser = catchAsync(async (req, res) => {
     );
   }
 
-  const hashedPassword = await bcrypt.hash(Password, 10);
-
-  fields.Password = hashedPassword;
-
   // Check if the email already exists
   const emailExists = await emailCheck.isUserEmailExists(Email);
 
@@ -36,6 +34,11 @@ const createNewUser = catchAsync(async (req, res) => {
     throw new ApiError(403, "User already exists with this email");
   }
 
+  const hashedPassword = await bcrypt.hash(Password, 10);
+  fields.Password = hashedPassword;
+  const { otp, hashedOTP, otpExpires } = generateOTP();
+  fields.OTP = hashedOTP;
+  fields.OTPExpires = String(otpExpires);
   const data = { fields };
 
   const response = await axios.post(userTable, data, {
@@ -90,16 +93,12 @@ const userLogin = catchAsync(async (req, res, next) => {
   });
 });
 
-//   Forget Password
+//   Forgot Password
 const forgotPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
   const user = await findUser(email);
 
-  const otp = crypto.randomInt(100000, 999999);
-  const hashedOTP = bcrypt.hashSync(String(otp), 10);
-  const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-  console.log(user, otp, hashedOTP, otpExpires);
+  const { otp, hashedOTP, otpExpires } = generateOTP();
 
   const options = {
     method: "PATCH",
@@ -183,38 +182,21 @@ const verifyOTP = catchAsync(async (req, res) => {
 
 // Reset Password
 const resetPassword = catchAsync(async (req, res) => {
-  const { fields } = req.body;
-  const field = "Email";
+  const { email, password } = req.body;
 
-  try {
-    const url = `${userTable}?filterByFormula=({${field}}='${fields.Email}')`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
+  const user = await findUser(email);
 
-    const response = await axios.get(url, { headers });
-    const userRecord = response.data.records[0];
+  const hashedPassword = await bcrypt.hash(password, 10);
+  fields.Password = hashedPassword;
+  const data = { fields };
 
-    if (!userRecord) {
-      return res.status(404).json({ error: "User not found" });
-    }
+  await axios.patch(`${userTable}/${user.id}`, data, { headers });
 
-    // otp section
-    const OTP = 12333;
-
-    const Password = fields.Password;
-    const hashedPassword = await bcrypt.hash(Password, 10);
-
-    fields.Password = hashedPassword;
-
-    const data = { fields };
-    await axios.patch(`${userTable}/${userRecord.id}`, data, { headers });
-
-    return res.status(200).json({ message: "Password reset Successfull" });
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Password updated.",
+  });
 });
 
 module.exports = {

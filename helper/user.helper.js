@@ -4,6 +4,7 @@ const apiKey = config.key.apiKey;
 const axios = require("axios");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/errors/ApiError");
+const crypto = require("crypto");
 
 const authenticateUser = async ({ email, password }) => {
   if (!email || !password) {
@@ -61,7 +62,20 @@ const findUser = async (email) => {
   }
 };
 
+const generateOTP = () => {
+  const otp = crypto.randomInt(100000, 999999);
+  const hashedOTP = bcrypt.hashSync(String(otp), 10);
+  const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  return {
+    otp,
+    hashedOTP,
+    otpExpires,
+  };
+};
+
 module.exports = {
   authenticateUser,
   findUser,
+  generateOTP,
 };
