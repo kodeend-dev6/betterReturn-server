@@ -63,7 +63,34 @@ const buyPlan = async (req, res) => {
   }
 };
 
+const updateUserInfo = async (req, res) => {
+  const recordId = req.query.id;
+  const {fields} = req.body;
+  
+
+  try {
+    const airtableURL = `${userTable}/${recordId}`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const data = { fields };
+
+    const response = await axios.patch(airtableURL, data, { headers });
+
+    if (response.status === 200) {
+      res.status(200).json({ message: 'Record updated successfully' });
+    } else {
+      res.status(response.status).json(response.data);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error updating the record' });
+  }
+};
+
 module.exports = {
   getAllUser,
   buyPlan,
+  updateUserInfo,
 };
