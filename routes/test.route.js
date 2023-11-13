@@ -5,6 +5,7 @@ const router = express.Router();
 const sendResponse = require("../utils/sendResponse");
 const createEvent = require("../helper/createEvent");
 const sendSMS = require("../utils/sendSMS");
+const sendNodeEmail = require("../helper/email/sendNodeEmail");
 
 router.post(
   "/send",
@@ -39,6 +40,20 @@ router.post(
       statusCode: 200,
       message: "SMS sent successfully",
       data: response,
+    });
+  })
+);
+
+router.post(
+  "/send-email",
+  catchAsync(async (req, res, next) => {
+    const { email, subject, otp } = req.body;
+    await sendNodeEmail({ email, subject, otp });
+
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "SMS sent successfully",
     });
   })
 );
