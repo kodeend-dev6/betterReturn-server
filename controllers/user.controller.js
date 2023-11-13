@@ -104,6 +104,8 @@ const updateUserInfo = async (req, res) => {
   }
 };
 
+
+
 module.exports = {
   getAllUser,
   getSingleUser,
