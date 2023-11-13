@@ -13,6 +13,8 @@ const {
   findUser,
   generateOTP,
 } = require("../helper/user.helper");
+const sendNodeEmail = require("../helper/email/sendNodeEmail");
+const emailVerificationTemplate = require("../helper/email/emailVerificationTemplate");
 
 // User Registration
 const createNewUser = catchAsync(async (req, res) => {
@@ -55,6 +57,11 @@ const createNewUser = catchAsync(async (req, res) => {
   // });
 
   // console.log(emailResponse);
+  await sendNodeEmail({
+    email: response?.data?.fields?.Email,
+    subject: "Email Verification",
+    html: emailVerificationTemplate({ otp }),
+  });
 
   const accessToken = getToken({
     id: response.data.id,
@@ -62,12 +69,14 @@ const createNewUser = catchAsync(async (req, res) => {
   });
 
   delete response?.data?.fields?.Password;
+  delete response?.data?.fields?.OTP;
+  delete response?.data?.fields?.OTPExpires;
 
   sendResponse(res, {
     statusCode: 201,
     success: true,
     message: "User registered successfully",
-    data: { accessToken, ...response.data },
+    data: { otp, accessToken, ...response.data },
   });
 });
 
@@ -85,6 +94,8 @@ const userLogin = catchAsync(async (req, res, next) => {
   });
 
   delete data?.fields?.Password;
+  delete data?.fields?.OTP;
+  delete data?.fields?.OTPExpires;
 
   sendResponse(res, {
     statusCode: 200,
@@ -165,11 +176,18 @@ const verifyOTP = catchAsync(async (req, res) => {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    data: { fields: { OTP: "", OTPExpires: "" } },
+    data: {
+      fields: {
+        OTP: "",
+        OTPExpires: "",
+        Email_verified_at: String(Date.now()),
+      },
+    },
   };
 
   try {
-    await axios.request(options);
+    const response = await axios.request(options);
+    console.log(response);
   } catch (error) {
     console.log(error?.response?.data);
   }
