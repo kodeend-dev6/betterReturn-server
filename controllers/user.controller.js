@@ -3,6 +3,9 @@ const userTable = config.db.userTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require("axios");
 const { isFreetierUsed } = require("../helper/checkFreeTier");
+const catchAsync = require("../utils/errors/catchAsync");
+const { findUser } = require("../helper/user.helper");
+const sendResponse = require("../utils/sendResponse");
 
 const getAllUser = async (req, res) => {
   try {
@@ -18,6 +21,19 @@ const getAllUser = async (req, res) => {
     res.status(500).json({ message: "Can't fetch all user." });
   }
 };
+
+// Get Single
+const getSingleUser = catchAsync(async (req, res) => {
+  const { email } = req.user;
+  const result = await findUser(email);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "User Retrieved Successfully",
+    data: result,
+  });
+});
 
 const buyPlan = async (req, res) => {
   try {
@@ -65,8 +81,7 @@ const buyPlan = async (req, res) => {
 
 const updateUserInfo = async (req, res) => {
   const recordId = req.query.id;
-  const {fields} = req.body;
-  
+  const { fields } = req.body;
 
   try {
     const airtableURL = `${userTable}/${recordId}`;
@@ -79,18 +94,19 @@ const updateUserInfo = async (req, res) => {
     const response = await axios.patch(airtableURL, data, { headers });
 
     if (response.status === 200) {
-      res.status(200).json({ message: 'Record updated successfully' });
+      res.status(200).json({ message: "Record updated successfully" });
     } else {
       res.status(response.status).json(response.data);
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error updating the record' });
+    res.status(500).json({ message: "Error updating the record" });
   }
 };
 
 module.exports = {
   getAllUser,
+  getSingleUser,
   buyPlan,
   updateUserInfo,
 };
