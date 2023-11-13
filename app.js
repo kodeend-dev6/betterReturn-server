@@ -42,6 +42,12 @@ app.use(globalErrorHandler);
 
 
 
+app.get("/config", (req, res) => {
+  res.send({
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+  });
+});
+
 app.post("/create-payment-intent", async (req, res) => {
   try {
     // const price = req.body.price;
