@@ -6,6 +6,7 @@ const sendResponse = require("../utils/sendResponse");
 const createEvent = require("../helper/createEvent");
 const sendSMS = require("../utils/sendSMS");
 const sendNodeEmail = require("../helper/email/sendNodeEmail");
+const emailVerificationTemplate = require("../helper/email/emailVerificationTemplate");
 
 router.post(
   "/send",
@@ -48,7 +49,11 @@ router.post(
   "/send-email",
   catchAsync(async (req, res, next) => {
     const { email, subject, otp } = req.body;
-    await sendNodeEmail({ email, subject, otp });
+    await sendNodeEmail({
+      email,
+      subject,
+      html: emailVerificationTemplate({ otp }),
+    });
 
     sendResponse(res, {
       success: true,
