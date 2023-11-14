@@ -39,7 +39,7 @@ const authenticateUser = async ({ email, password }) => {
   }
 };
 
-const findUser = async (email) => {
+const findUser = async (email, { throwError }) => {
   try {
     const response = await axios.get(userTable, {
       headers: {
@@ -52,7 +52,7 @@ const findUser = async (email) => {
 
     const user = response?.data?.records[0];
 
-    if (!user) {
+    if (!user && throwError) {
       throw new ApiError(404, "User not found.");
     }
 

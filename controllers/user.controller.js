@@ -25,7 +25,7 @@ const getAllUser = async (req, res) => {
 // Get Single
 const getSingleUser = catchAsync(async (req, res) => {
   const { email } = req.user;
-  const result = await findUser(email);
+  const result = await findUser(email, { throwError: true });
 
   sendResponse(res, {
     success: true,
@@ -103,8 +103,6 @@ const updateUserInfo = async (req, res) => {
     res.status(500).json({ message: "Error updating the record" });
   }
 };
-
-
 
 module.exports = {
   getAllUser,
