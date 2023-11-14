@@ -48,30 +48,33 @@ app.get("/config", (req, res) => {
   });
 });
 
-app.post("/create-payment-intent", async (req, res) => {
+app.post('/checkout', async (req, res) => {
+
   try {
-    // const price = req.body.price;
-    const price = 30;
-    const amount = price*100;
-    const paymentIntent = await stripe.paymentIntents.create({
-      currency: "EUR",
-      amount: amount,
-      automatic_payment_methods: { enabled: true },
-
-    });
-
-    // Send publishable key and PaymentIntent details to client
-    res.send({
-      clientSecret: paymentIntent.client_secret,
-    });
-  } catch (e) {
-    return res.status(400).send({
-      error: {
-        message: e.message,
-      },
-    });
+      const session = await stripe.checkout.sessions.create({
+          // payment_method_types:["card"],
+          mode: 'payment',
+          line_items:req.body.items.map(item=>{
+              return{
+                  price_data :{
+                      currency:'usd',
+                      product_data : {
+                          name:item.name
+                      },
+                      unit_amount:(item.price)*100
+                  },
+                  quantity:item.quantity
+              }
+          }),  
+          success_url: 'https://www.sports.kodeend.com',
+          cancel_url: 'https://www.br.kodeend.com'
+      });
+      return res.json({ url: session.url });
+  } catch (error) {
+      console.log(error);
+      res.status(500).send('Internal server error');
   }
-});
+})
 
 
 // 404 Error handler
