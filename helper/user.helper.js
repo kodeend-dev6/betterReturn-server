@@ -74,8 +74,26 @@ const generateOTP = () => {
   };
 };
 
+const verifyOTP = async ({ email, otp }) => {
+  const user = await findUser(email, { throwError: true });
+
+  if (!user?.fields?.OTP) throw new ApiError(400, "OTP not found.");
+
+  const isMatched = bcrypt.compareSync(String(otp), user?.fields?.OTP);
+
+  if (!isMatched) {
+    throw new ApiError(401, "OTP mismatched.");
+  }
+
+  if (user?.fields?.OTPExpires < Date.now()) {
+    throw new ApiError(411, "OTP expired.");
+  }
+  return user;
+};
+
 module.exports = {
   authenticateUser,
   findUser,
   generateOTP,
+  verifyOTP,
 };
