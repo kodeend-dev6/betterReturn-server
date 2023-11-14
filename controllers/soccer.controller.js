@@ -77,6 +77,8 @@ const getSingleSoccerMatch = async (req, res) => {
 const createNewMatch = async (req, res) => {
   const { fields } = req.body;
 
+  console.log(fields);
+
   const data = { fields }
 
   try {
