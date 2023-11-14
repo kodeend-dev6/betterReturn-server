@@ -12,9 +12,11 @@ const {
   authenticateUser,
   findUser,
   generateOTP,
+  verifyOTP,
 } = require("../helper/user.helper");
 const sendNodeEmail = require("../helper/email/sendNodeEmail");
 const emailVerificationTemplate = require("../helper/email/emailVerificationTemplate");
+const forgotPasswordTemplate = require("../helper/email/forgotPasswordTemplate");
 
 // User Registration
 const createNewUser = catchAsync(async (req, res) => {
@@ -105,61 +107,10 @@ const userLogin = catchAsync(async (req, res, next) => {
   });
 });
 
-//   Forgot Password
-const forgotPassword = catchAsync(async (req, res) => {
-  const { email } = req.body;
-  const user = await findUser(email, { throwError: true });
-
-  const { otp, hashedOTP, otpExpires } = generateOTP();
-
-  const options = {
-    method: "PATCH",
-    url: `${userTable}/${user?.id}`,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    data: {
-      fields: {
-        OTP: hashedOTP,
-        OTPExpires: String(otpExpires),
-      },
-    },
-  };
-
-  try {
-    await axios.request(options);
-  } catch (error) {
-    console.log(error?.response?.data);
-  }
-
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "OTP sent to your email",
-    data: {
-      email: user.fields.Email,
-      otp,
-    },
-  });
-});
-
-// Verify OTP
-const verifyOTP = catchAsync(async (req, res) => {
+// Verify Email
+const verifyEmail = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
-  const user = await findUser(email, { throwError: true });
-
-  if (!user?.fields?.OTP) throw new ApiError(400, "OTP not found.");
-
-  const isMatched = bcrypt.compareSync(String(otp), user?.fields?.OTP);
-
-  if (!isMatched) {
-    throw new ApiError(401, "OTP mismatched.");
-  }
-
-  if (user?.fields?.OTPExpires < Date.now()) {
-    throw new ApiError(411, "OTP expired.");
-  }
+  await verifyOTP({ email, otp });
 
   const options = {
     method: "PATCH",
@@ -191,17 +142,106 @@ const verifyOTP = catchAsync(async (req, res) => {
   });
 });
 
+//   Forgot Password
+const forgotPassword = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const user = await findUser(email, { throwError: true });
+
+  const { otp, hashedOTP, otpExpires } = generateOTP();
+
+  sendNodeEmail({
+    email: user.fields.Email,
+    subject: "Reset Password",
+    html: forgotPasswordTemplate({ otp }),
+  });
+
+  const options = {
+    method: "PATCH",
+    url: `${userTable}/${user?.id}`,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    data: {
+      fields: {
+        OTP: hashedOTP,
+        OTPExpires: String(otpExpires),
+      },
+    },
+  };
+
+  try {
+    await axios.request(options);
+  } catch (error) {
+    console.log(error?.response?.data);
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "OTP sent to your email",
+    data: {
+      email: user.fields.Email,
+    },
+  });
+});
+
+const verifyForgotPasswordOTP = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+
+  await verifyOTP({ email, otp });
+
+  const options = {
+    method: "PATCH",
+    url: `${userTable}/${user?.id}`,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    data: {
+      fields: {
+        OTP: "",
+        OTPExpires: "",
+      },
+    },
+  };
+
+  try {
+    const response = await axios.request(options);
+    console.log(response);
+  } catch (error) {
+    console.log(error?.response?.data);
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "OTP verified.",
+  });
+});
+
 // Reset Password
 const resetPassword = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-
   const user = await findUser(email, { throwError: true });
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  fields.Password = hashedPassword;
-  const data = { fields };
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
-  await axios.patch(`${userTable}/${user.id}`, data, { headers });
+  const options = {
+    method: "PATCH",
+    url: `${userTable}/${user?.id}`,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    data: {
+      fields: {
+        Password: hashedPassword,
+      },
+    },
+  };
+
+  await axios.request(options);
 
   sendResponse(res, {
     statusCode: 200,
@@ -296,8 +336,9 @@ const googleLoginCallback = catchAsync(async (req, res) => {
 module.exports = {
   createNewUser,
   userLogin,
+  verifyEmail,
   forgotPassword,
-  verifyOTP,
+  verifyForgotPasswordOTP,
   resetPassword,
   googleLoginCallback,
 };

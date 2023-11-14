@@ -6,15 +6,17 @@ const {
   createNewUser,
   userLogin,
   forgotPassword,
-  verifyOTP,
+  verifyEmail,
   resetPassword,
   googleLoginCallback,
+  verifyForgotPasswordOTP,
 } = require("../controllers/auth.controller");
 
 router.post("/registration", createNewUser);
 router.post("/login", userLogin);
+router.post("/verify-email", verifyEmail);
 router.post("/forgot-password", forgotPassword);
-router.post("/verify-otp", verifyOTP);
+router.post("/verify-forgot-password-otp", verifyForgotPasswordOTP);
 router.post("/reset-password", resetPassword);
 router.get(
   "/google",
