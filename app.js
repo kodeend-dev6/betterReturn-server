@@ -15,17 +15,35 @@ const userRouter = require("./routes/user.route");
 const testRouter = require("./routes/test.route");
 const searchRouter = require("./routes/search.route");
 
+const passport = require("passport");
+const session = require("express-session");
+const passportGoogle = require("./helper/passportGoogle");
+
 const app = express();
 
 //middlewares
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
+// Initialize session and passport
+app.use(
+  session({
+    secret: process.env.TOKEN_SECRET,
+    resave: true,
+    saveUninitialized: true,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+// app.use(passportGoogle());
+passportGoogle();
 
 // Default Route
 app.get("/", (req, res) => {
   res.send("Better Return server is running...");
 });
+
+// ---------------- Passport Google ----------------
 
 // All Routes
 app.use("/api/soccer", soccerRouter);
@@ -40,8 +58,6 @@ app.use("/api/search", searchRouter);
 // Global Error Handler
 app.use(globalErrorHandler);
 
-
-
 app.get("/config", (req, res) => {
   res.send({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
@@ -52,12 +68,11 @@ app.post("/create-payment-intent", async (req, res) => {
   try {
     // const price = req.body.price;
     const price = 30;
-    const amount = price*100;
+    const amount = price * 100;
     const paymentIntent = await stripe.paymentIntents.create({
       currency: "EUR",
       amount: amount,
       automatic_payment_methods: { enabled: true },
-
     });
 
     // Send publishable key and PaymentIntent details to client
@@ -72,7 +87,6 @@ app.post("/create-payment-intent", async (req, res) => {
     });
   }
 });
-
 
 // 404 Error handler
 app.all("*", (req, res) => {

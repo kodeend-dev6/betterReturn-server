@@ -76,7 +76,7 @@ const createNewUser = catchAsync(async (req, res) => {
     statusCode: 201,
     success: true,
     message: "User registered successfully",
-    data: { otp, accessToken, ...response.data },
+    data: { accessToken, ...response.data },
   });
 });
 
@@ -108,7 +108,7 @@ const userLogin = catchAsync(async (req, res, next) => {
 //   Forgot Password
 const forgotPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
-  const user = await findUser(email);
+  const user = await findUser(email, { throwError: true });
 
   const { otp, hashedOTP, otpExpires } = generateOTP();
 
@@ -133,14 +133,6 @@ const forgotPassword = catchAsync(async (req, res) => {
     console.log(error?.response?.data);
   }
 
-  // const emailResponse = await sendEmail({
-  //   email: user.fields.Email,
-  //   subject: "Password Reset",
-  //   message: `Your OTP is ${otp}`,
-  // });
-
-  // console.log(emailResponse);
-
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -155,7 +147,7 @@ const forgotPassword = catchAsync(async (req, res) => {
 // Verify OTP
 const verifyOTP = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
-  const user = await findUser(email);
+  const user = await findUser(email, { throwError: true });
 
   if (!user?.fields?.OTP) throw new ApiError(400, "OTP not found.");
 
@@ -203,7 +195,7 @@ const verifyOTP = catchAsync(async (req, res) => {
 const resetPassword = catchAsync(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await findUser(email);
+  const user = await findUser(email, { throwError: true });
 
   const hashedPassword = await bcrypt.hash(password, 10);
   fields.Password = hashedPassword;
@@ -218,10 +210,92 @@ const resetPassword = catchAsync(async (req, res) => {
   });
 });
 
+// Google Login
+const googleLoginCallback = catchAsync(async (req, res) => {
+  const info = {
+    Name: req.user._json.name,
+    Email: req.user._json.email,
+    Google_id: req.user._json.sub,
+    Image: req.user._json.picture,
+    Country: req.user._json.country,
+  };
+
+  const user = await findUser(info?.Email, { throwError: false });
+
+  // If user doesn't exist, create a new user with google info
+  if (!user) {
+    const { otp, hashedOTP, otpExpires } = generateOTP();
+    info.OTP = hashedOTP;
+    info.OTPExpires = String(otpExpires);
+    const data = { fields: info };
+
+    const response = await axios.post(userTable, data, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    await sendNodeEmail({
+      email: response?.data?.fields?.Email,
+      subject: "Email Verification",
+      html: emailVerificationTemplate({ otp }),
+    });
+
+    const accessToken = getToken({
+      id: response?.data?.id,
+      email: response?.data?.fields?.Email,
+    });
+
+    delete response?.data?.fields?.Password;
+    delete response?.data?.fields?.OTP;
+    delete response?.data?.fields?.OTPExpires;
+
+    res.redirect(
+      `${process.env.CLIENT_SITE_URL}/google-callback?access_token=${accessToken}`
+    );
+  }
+
+  // If user exists, update the info
+  const accessToken = getToken({
+    id: user?.id,
+    email: user?.fields?.Email,
+  });
+
+  // update the user info if google_id not found
+  if (!user?.fields?.Google_id) {
+    const options = {
+      method: "PATCH",
+      url: `${userTable}/${user?.id}`,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      data: {
+        fields: {
+          Google_id: info?.Google_id,
+          Image: info?.Image,
+        },
+      },
+    };
+
+    try {
+      await axios.request(options);
+    } catch (error) {
+      console.log(error?.response?.data);
+    }
+  }
+
+  res.redirect(
+    `${process.env.CLIENT_SITE_URL}/google-callback?access_token=${accessToken}`
+  );
+});
+
 module.exports = {
   createNewUser,
   userLogin,
   forgotPassword,
   verifyOTP,
   resetPassword,
+  googleLoginCallback,
 };
