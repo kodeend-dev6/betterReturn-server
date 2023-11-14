@@ -1,10 +1,17 @@
 const express = require("express");
 const router = express.Router();
+const { verifyToken } = require("../middleware/token");
 
-const { getAllUser, buyPlan, updateUserInfo } = require("../controllers/user.controller");
+const {
+  getAllUser,
+  buyPlan,
+  updateUserInfo,
+  getSingleUser,
+} = require("../controllers/user.controller");
 
 router.get("/", getAllUser);
-router.put("/update", updateUserInfo)
+router.get("/get", verifyToken, getSingleUser);
+router.put("/update", updateUserInfo);
 router.put("/plan/:userID", buyPlan);
 
 module.exports = router;
