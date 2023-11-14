@@ -189,7 +189,7 @@ const forgotPassword = catchAsync(async (req, res) => {
 const verifyForgotPasswordOTP = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
 
-  await verifyOTP({ email, otp });
+  const user = await verifyOTP({ email, otp });
 
   const options = {
     method: "PATCH",

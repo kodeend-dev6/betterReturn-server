@@ -88,6 +88,7 @@ const verifyOTP = async ({ email, otp }) => {
   if (user?.fields?.OTPExpires < Date.now()) {
     throw new ApiError(411, "OTP expired.");
   }
+  return user;
 };
 
 module.exports = {
