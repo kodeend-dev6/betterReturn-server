@@ -251,8 +251,10 @@ const googleLoginCallback = catchAsync(async (req, res) => {
     delete response?.data?.fields?.OTP;
     delete response?.data?.fields?.OTPExpires;
 
+    console.log(accessToken);
+
     res.redirect(
-      `${process.env.CLIENT_SITE_URL}/google-callback?access_token=${accessToken}`
+      `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`
     );
   }
 
@@ -287,7 +289,7 @@ const googleLoginCallback = catchAsync(async (req, res) => {
   }
 
   res.redirect(
-    `${process.env.CLIENT_SITE_URL}/google-callback?access_token=${accessToken}`
+    `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`
   );
 });
 
