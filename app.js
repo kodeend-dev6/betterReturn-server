@@ -69,7 +69,7 @@ app.post("/checkout", async (req, res) => {
       line_items: req.body.items.map((item) => {
         return {
           price_data: {
-            currency: "usd",
+            currency: "eur",
             product_data: {
               name: item.name,
             },
