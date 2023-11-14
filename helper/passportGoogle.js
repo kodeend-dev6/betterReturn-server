@@ -8,7 +8,7 @@ const passportGoogle = async () => {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL:
-          "https://better-return-server.onrender.com/auth/google/callback",
+          "https://better-return-server.onrender.com/api/auth/google/callback",
       },
       (accessToken, refreshToken, profile, done) => {
         return done(null, profile);
