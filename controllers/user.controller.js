@@ -8,6 +8,8 @@ const { findUser } = require("../helper/user.helper");
 const sendResponse = require("../utils/sendResponse");
 
 const getAllUser = async (req, res) => {
+  
+  const PAGE_SIZE = 10;
   try {
     const response = await axios.get(userTable, {
       headers: {
@@ -43,7 +45,7 @@ const buyPlan = async (req, res) => {
     const FreeTierUsed = await isFreetierUsed(fields.Email);
 
     if (!FreeTierUsed) {
-      return res.send("You have already used the free plan.");
+      return res.send("You have already used the free plan. Please Make payment");
     }
 
     const airtableURL = `${userTable}/${userID}`;
@@ -103,6 +105,7 @@ const updateUserInfo = async (req, res) => {
     res.status(500).json({ message: "Error updating the record" });
   }
 };
+
 
 module.exports = {
   getAllUser,

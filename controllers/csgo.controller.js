@@ -80,7 +80,15 @@ const getSingleCsgoMatch = async (req, res) => {
 const createNewCsgoMatch = async (req, res) => {
 
   const { fields } = req.body;
+  const dateValue = fields.Date;
+  
+
+  const dateComponents = dateValue.split("-");
+  const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
+
+
   const data = { fields };
+  data.fields["Date"] = date;
 
   try {
     const response = await axios.post(csgoTable, data, {

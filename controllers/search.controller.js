@@ -46,7 +46,11 @@ const searchGame = async (req, res) => {
             }),
         ]);
 
-        let combinedData = [...data1.data.records, ...data2.data.records, ...data3.data.records];
+        let combinedData = {
+            soccer: data1.data.records,
+            csgo: data2.data.records,
+            valorant: data3.data.records
+        };
 
         res.json(combinedData);
     } catch (error) {
