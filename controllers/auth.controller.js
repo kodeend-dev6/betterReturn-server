@@ -90,7 +90,7 @@ const userLogin = catchAsync(async (req, res, next) => {
     throw new ApiError(401, "Email or Password mismatched!");
   }
 
-  if (!data?.fields?.Email_verified_at || !data?.fields?.Role !== "admin") {
+  if (!data?.fields?.Email_verified_at && !data?.fields?.Role !== "admin") {
     const { otp, hashedOTP, otpExpires } = generateOTP();
     sendNodeEmail({
       email: data?.fields?.Email,
