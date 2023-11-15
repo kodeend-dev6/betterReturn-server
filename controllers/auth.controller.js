@@ -90,6 +90,36 @@ const userLogin = catchAsync(async (req, res, next) => {
     throw new ApiError(401, "Email or Password mismatched!");
   }
 
+  if (!data?.fields?.Email_verified_at || !data?.fields?.Role !== "admin") {
+    const { otp, hashedOTP, otpExpires } = generateOTP();
+    sendNodeEmail({
+      email: data?.fields?.Email,
+      subject: "Email Verification",
+      html: emailVerificationTemplate({ otp }),
+    });
+
+    const options = {
+      method: "PATCH",
+      url: `${userTable}/${data?.id}`,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      data: {
+        fields: {
+          OTP: hashedOTP,
+          OTPExpires: String(otpExpires),
+        },
+      },
+    };
+
+    try {
+      await axios.request(options);
+    } catch (error) {
+      console.log(error?.response?.data);
+    }
+  }
+
   const accessToken = getToken({
     id: data?.id,
     email: data?.fields?.Email,
@@ -110,7 +140,7 @@ const userLogin = catchAsync(async (req, res, next) => {
 // Verify Email
 const verifyEmail = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
-  await verifyOTP({ email, otp });
+  const user = await verifyOTP({ email, otp });
 
   const options = {
     method: "PATCH",
@@ -291,11 +321,9 @@ const googleLoginCallback = catchAsync(async (req, res) => {
     delete response?.data?.fields?.OTP;
     delete response?.data?.fields?.OTPExpires;
 
-    console.log(accessToken);
-
-    res.redirect(
-      `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`
-    );
+    const redirectURL = `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`;
+    console.log(redirectURL);
+    res.redirect(redirectURL);
   }
 
   // If user exists, update the info
@@ -328,9 +356,9 @@ const googleLoginCallback = catchAsync(async (req, res) => {
     }
   }
 
-  res.redirect(
-    `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`
-  );
+  const redirectURL = `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`;
+  console.log(redirectURL);
+  res.redirect(redirectURL);
 });
 
 module.exports = {
