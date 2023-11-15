@@ -90,7 +90,10 @@ const createNewMatch = async (req, res) => {
     });
 
     console.log('Record added successfully:', response.data);
-    res.status(201).send('Record added successfully to Airtable.');
+    res.status(201).json({
+      success: true,
+      message: "Successfully added.."
+    });
   } catch (error) {
     console.error('Error adding record:', error);
     res.status(500).send('Error adding record to Airtable.');
