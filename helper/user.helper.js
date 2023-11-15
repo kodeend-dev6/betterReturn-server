@@ -10,56 +10,37 @@ const authenticateUser = async ({ email, password }) => {
   if (!email || !password) {
     throw new ApiError(400, "Email and password are required.");
   }
+  const user = await findUser(email, { throwError: true });
 
-  try {
-    // Fetch user data from Airtable based on the provided username
-    const response = await axios.get(userTable, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-      params: {
-        filterByFormula: `Email = "${email}"`,
-      },
-    });
+  if (user?.fields?.Email && !user?.fields?.Password) {
+    throw new ApiError(400, "Please login with social account.");
+  }
 
-    const user = response.data.records[0];
-
-    if (!user) {
-      throw new ApiError(404, "User not found.");
-    }
-
-    // Compare the hashed password
-    if (await bcrypt.compare(password, user.fields.Password)) {
-      return { isAuthenticated: true, data: user };
-    } else {
-      return { isAuthenticated: false, data: null };
-    }
-  } catch (error) {
-    throw new ApiError(500, "Internal server error.");
+  // Compare the hashed password
+  if (bcrypt.compareSync(password, user?.fields?.Password)) {
+    return { isAuthenticated: true, data: user };
+  } else {
+    return { isAuthenticated: false, data: null };
   }
 };
 
 const findUser = async (email, { throwError }) => {
-  try {
-    const response = await axios.get(userTable, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-      params: {
-        filterByFormula: `Email = "${email}"`,
-      },
-    });
+  const response = await axios.get(userTable, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+    params: {
+      filterByFormula: `Email = "${email}"`,
+    },
+  });
 
-    const user = response?.data?.records[0];
+  const user = response?.data?.records[0];
 
-    if (!user && throwError) {
-      throw new ApiError(404, "User not found.");
-    }
-
-    return user;
-  } catch (error) {
-    throw new ApiError(500, "Internal server error.");
+  if (!user && throwError) {
+    throw new ApiError(404, "User not found.");
   }
+
+  return user;
 };
 
 const generateOTP = () => {
