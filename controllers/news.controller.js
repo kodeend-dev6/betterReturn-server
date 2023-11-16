@@ -5,19 +5,23 @@ const axios = require('axios')
 
 const allNews = async (req, res) => {
     try {
+        const response = await axios.get(`${newsTable}`, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+            params: {
+                sort: [{ field: "Date", direction: "desc" }], // Sorting by 'Date' field in descending order
+                maxRecords: 15,
+            },
+        });
 
-        const headers = {
-            'Authorization': `Bearer ${apiKey}`
-        }
-
-        const response = await axios.get(newsTable, { headers });
         const data = response.data;
         res.status(200).json(data);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Failed to fetch news from airtable.' })
+        res.status(500).json({ message: 'Failed to fetch news from Airtable.' });
     }
-}
+};
+
+
 
 const getNewsByDate = async (req, res) => {
 
