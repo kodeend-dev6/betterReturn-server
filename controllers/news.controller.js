@@ -20,9 +20,11 @@ const allNews = async (req, res) => {
 }
 
 const getNewsByDate = async (req, res) => {
+
     try {
 
         const { value } = req.query;
+        console.log(value)
         const field = "Date";
 
 
