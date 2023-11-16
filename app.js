@@ -14,6 +14,7 @@ const authRouter = require("./routes/auth.route");
 const userRouter = require("./routes/user.route");
 const testRouter = require("./routes/test.route");
 const searchRouter = require("./routes/search.route");
+const pickOfTheDayRouter = require('./routes/pickOfDay.route');
 
 const passport = require("passport");
 const expressSession = require("express-session");
@@ -51,6 +52,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/test", testRouter);
 app.use("/api/search", searchRouter);
+app.use("/api/pick-of-the-day", pickOfTheDayRouter)
 
 // Global Error Handler
 app.use(globalErrorHandler);
@@ -81,7 +83,8 @@ app.post("/checkout", async (req, res) => {
       success_url: "https://www.sports.kodeend.com",
       cancel_url: "https://www.br.kodeend.com",
     });
-    return res.json({ url: session.url });
+    console.log(session);
+    // return res.json({ url: session.url });
   } catch (error) {
     console.log(error);
     res.status(500).send("Internal server error");
