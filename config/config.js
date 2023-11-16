@@ -6,14 +6,14 @@ const userTable = "User";
 const config = {
 
     db: {
-        soccerTableUrl: `https://api.airtable.com/v0/${process.env.BASEID}/${soccerTable}`,
-        csgoTableUrl: `https://api.airtable.com/v0/${process.env.BASEID}/${csgoTable}`,
-        valorantTableUrl: `https://api.airtable.com/v0/${process.env.BASEID}/${valorantTable}`,  
-        newsTableUrl: `https://api.airtable.com/v0/${process.env.BASEID}/${newsTable}`,  
-        userTableUrl: `https://api.airtable.com/v0/${process.env.BASEID}/${userTable}`  
+        soccerTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${soccerTable}`,
+        csgoTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${csgoTable}`,
+        valorantTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${valorantTable}`,  
+        newsTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${newsTable}`,  
+        userTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_TEST_BASEID}/${userTable}`  
     },
     key: {
-        apiKey: process.env.APIKEY
+        apiKey: process.env.AIRTABLE_APIKEY
     }
 }
 
