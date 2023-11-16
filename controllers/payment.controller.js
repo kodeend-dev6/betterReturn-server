@@ -18,9 +18,11 @@ const paymentCheckout = catchAsync(async (req, res) => {
         quantity: item.quantity,
       };
     }),
-    success_url: `${process.env.CLIENT_SITE_URL}/payment?success=true`,
+    success_url: `${process.env.CLIENT_SITE_URL}/payment?success=true&plan=${req.body.items[0].name}`,
     cancel_url: `${process.env.CLIENT_SITE_URL}/payment?success=false`,
   });
+
+  console.log(session);
 
   sendResponse(res, {
     success: true,
