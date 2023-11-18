@@ -2,6 +2,7 @@ const config = require("../config/config");
 const soccerTable = config.db.soccerTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require('axios');
+const moment = require('moment');
 
 
 const getAllSoccerMatches = async (req, res) => {
@@ -52,6 +53,34 @@ const getAllSoccerMatchesByDate = async (req, res) => {
   }
 };
 
+
+const getAllFinishedSoccerMatches = async (req, res) => {
+  try {
+    const selectedDay = req.query.selectedDay;
+    console.log(selectedDay); 
+    const threeDaysAgo = moment().subtract(3, 'days').format('YYYY-MM-DD'); 
+
+    const field = 'Date';
+
+    
+    const url = `${soccerTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>='${threeDaysAgo}')`;
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await axios.get(url, { headers });
+    const allData = response.data.records;
+
+    const filteredData = allData.filter((item) => item.fields.upload === true);
+
+    res.json(filteredData);
+  } catch (error) {
+    console.error('Previous match get error', error);
+    res.status(500).json({ error: 'An error occurred while fetching data.' });
+  }
+};
+
+
 const getSingleSoccerMatch = async (req, res) => {
   try {
 
@@ -76,8 +105,6 @@ const getSingleSoccerMatch = async (req, res) => {
 
 const createNewMatch = async (req, res) => {
   const { fields } = req.body;
-
-  console.log(fields);
 
   const data = { fields }
 
@@ -151,4 +178,4 @@ const updateOneMatch = async (req, res) => {
 
 
 
-module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch, deleteOneMatch, updateOneMatch }
+module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch, deleteOneMatch, updateOneMatch, getAllFinishedSoccerMatches }

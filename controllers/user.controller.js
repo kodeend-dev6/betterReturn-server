@@ -8,8 +8,7 @@ const { findUser } = require("../helper/user.helper");
 const sendResponse = require("../utils/sendResponse");
 
 const getAllUser = async (req, res) => {
-  
-  const PAGE_SIZE = 10;
+
   try {
     const response = await axios.get(userTable, {
       headers: {
