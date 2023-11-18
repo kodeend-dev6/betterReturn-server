@@ -2,6 +2,7 @@ const config = require("../config/config");
 const valorantTable = config.db.valorantTableUrl;
 const apiKey = config.key.apiKey
 const axios = require('axios');
+const moment = require('moment');
 
 
 const getAllValorantMatches = async (req, res) => {
@@ -71,6 +72,31 @@ const getSingleValorantMatch = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error('Error fetching data from Airtable:', error);
+    res.status(500).json({ error: 'An error occurred while fetching data.' });
+  }
+};
+
+const getAllFinishedValorantMatches = async (req, res) => {
+  try {
+    const selectedDay = req.query.selectedDay;
+    const threeDaysAgo = moment(selectedDay).subtract(3, 'days').format('YYYY-MM-DD');
+
+    const field = 'Date';
+
+    const url = `${valorantTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>'${threeDaysAgo}')&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=desc`;
+
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await axios.get(url, { headers });
+    const allData = response.data.records;
+
+    const filteredData = allData.filter((item) => item.fields.upload === true);
+
+    res.json(filteredData);
+  } catch (error) {
+    console.error('Previous match get error', error);
     res.status(500).json({ error: 'An error occurred while fetching data.' });
   }
 };
@@ -150,4 +176,4 @@ const deleteOneValorantMatch = async (req, res) => {
 
 
 
-module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate, createNewValorantMatch, updateOneValorantMatch, deleteOneValorantMatch}
+module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate, createNewValorantMatch, updateOneValorantMatch, deleteOneValorantMatch, getAllFinishedValorantMatches}

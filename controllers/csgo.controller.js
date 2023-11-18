@@ -2,6 +2,7 @@ const config = require("../config/config");
 const csgoTable = config.db.csgoTableUrl;
 const apiKey = config.key.apiKey
 const axios = require('axios');
+const moment = require('moment');
 
 
 const getAllCsgoMatches = async (req, res) => {
@@ -77,11 +78,54 @@ const getSingleCsgoMatch = async (req, res) => {
   }
 };
 
+
+const getAllFinishedCsgoMatches = async (req, res) => {
+  try {
+
+    const selectedDay = req.query.selectedDay;
+
+    const dateComponents = selectedDay.split("-");
+    const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
+
+    const fristPrevious = moment(date, 'DD-MM-YYYY').subtract(1, 'days').format('DD-MM-YYYY');
+    const secondPrevious = moment(date, 'DD-MM-YYYY').subtract(2, 'days').format('DD-MM-YYYY');
+
+    const [data1, data2, data3] = await Promise.all([
+      axios.get(csgoTable, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        params: {
+          filterByFormula: `AND({Date}='${date}', {upload}=1)`,
+        },
+      }),
+      axios.get(csgoTable, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        params: {
+          filterByFormula: `AND({Date}='${fristPrevious}', {upload}=1)`,
+        },
+      }),
+      axios.get(csgoTable, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        params: {
+          filterByFormula: `AND({Date}='${secondPrevious}', {upload}=1)`,
+        },
+      }),
+    ]);
+
+    let combinedData = [...data1.data.records, ...data2.data.records, ...data3.data.records];
+
+    res.json(combinedData);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+
 const createNewCsgoMatch = async (req, res) => {
 
   const { fields } = req.body;
   const dateValue = fields.Date;
-  
+
 
   const dateComponents = dateValue.split("-");
   const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
@@ -159,4 +203,4 @@ const deleteOneCsgoMatch = async (req, res) => {
 
 
 
-module.exports = { getAllCsgoMatches, getSingleCsgoMatch, getAllCsgoMatchesByDate, createNewCsgoMatch, updateOneCsgoMatch, deleteOneCsgoMatch }
+module.exports = { getAllCsgoMatches, getSingleCsgoMatch, getAllCsgoMatchesByDate, createNewCsgoMatch, updateOneCsgoMatch, deleteOneCsgoMatch, getAllFinishedCsgoMatches }
