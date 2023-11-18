@@ -8,7 +8,7 @@ const allNews = async (req, res) => {
         const response = await axios.get(`${newsTable}`, {
             headers: { Authorization: `Bearer ${apiKey}` },
             params: {
-                sort: [{ field: "Date", direction: "desc" }], // Sorting by 'Date' field in descending order
+                sort: [{ field: "Date", direction: "desc" }],
                 maxRecords: 15,
             },
         });

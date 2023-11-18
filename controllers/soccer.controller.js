@@ -57,13 +57,12 @@ const getAllSoccerMatchesByDate = async (req, res) => {
 const getAllFinishedSoccerMatches = async (req, res) => {
   try {
     const selectedDay = req.query.selectedDay;
-    console.log(selectedDay); 
-    const threeDaysAgo = moment().subtract(3, 'days').format('YYYY-MM-DD'); 
+    const threeDaysAgo = moment(selectedDay).subtract(3, 'days').format('YYYY-MM-DD');
 
     const field = 'Date';
 
-    
-    const url = `${soccerTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>='${threeDaysAgo}')`;
+    const url = `${soccerTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>'${threeDaysAgo}')&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=desc`;
+
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -79,6 +78,32 @@ const getAllFinishedSoccerMatches = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching data.' });
   }
 };
+
+const getAllNextSoccerMatches = async (req, res) => {
+  try {
+    const selectedDay = req.query.selectedDay;
+    const threeDaysNext = moment(selectedDay).add(3, 'days').format('YYYY-MM-DD');
+
+    const field = 'Date';
+
+    const url = `${soccerTable}?filterByFormula=AND({${field}}>='${selectedDay}', {${field}}<='${threeDaysNext}')&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=asc`;
+
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await axios.get(url, { headers });
+    const allData = response.data.records;
+
+    const filteredData = allData.filter((item) => item.fields.upload === true);
+
+    res.json(filteredData);
+  } catch (error) {
+    console.error('Previous match get error', error);
+    res.status(500).json({ error: 'An error occurred while fetching data.' });
+  }
+};
+
 
 
 const getSingleSoccerMatch = async (req, res) => {
@@ -178,4 +203,4 @@ const updateOneMatch = async (req, res) => {
 
 
 
-module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch, deleteOneMatch, updateOneMatch, getAllFinishedSoccerMatches }
+module.exports = { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch, deleteOneMatch, updateOneMatch, getAllFinishedSoccerMatches, getAllNextSoccerMatches }

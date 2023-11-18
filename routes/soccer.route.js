@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch, deleteOneMatch, updateOneMatch, getAllFinishedSoccerMatches } = require('../controllers/soccer.controller');
+const { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, createNewMatch, deleteOneMatch, updateOneMatch, getAllFinishedSoccerMatches, getAllNextSoccerMatches } = require('../controllers/soccer.controller');
 
 
 
@@ -9,6 +9,7 @@ const { getAllSoccerMatches, getSingleSoccerMatch, getAllSoccerMatchesByDate, cr
 router.get("/", getAllSoccerMatches);
 router.get("/date", getAllSoccerMatchesByDate);
 router.get("/previous", getAllFinishedSoccerMatches)
+router.get("/next", getAllNextSoccerMatches)
 router.get("/:matchID", getSingleSoccerMatch);
 
 // post route
