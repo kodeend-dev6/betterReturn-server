@@ -3,6 +3,8 @@ const newsTable = config.db.newsTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require('axios')
 
+
+
 const allNews = async (req, res) => {
     try {
         const response = await axios.get(`${newsTable}`, {
@@ -13,7 +15,7 @@ const allNews = async (req, res) => {
             },
         });
 
-        const data = response.data;
+        const data = response.data.records;
         res.status(200).json(data);
     } catch (error) {
         console.error(error);

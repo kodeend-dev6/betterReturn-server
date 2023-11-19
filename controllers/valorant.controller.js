@@ -3,6 +3,7 @@ const valorantTable = config.db.valorantTableUrl;
 const apiKey = config.key.apiKey
 const axios = require('axios');
 const moment = require('moment');
+const moment2 = require('moment-timezone');
 
 
 const getAllValorantMatches = async (req, res) => {
@@ -53,6 +54,54 @@ const getAllValorantMatchesByDate = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while fetching data.' });
   }
 };
+
+// const getAllValorantMatchesByDate = async (req, res) => {
+//   try {
+//     const { value } = req.query;
+//     const field = "Date";
+
+//     if (!field || !value) {
+//       return res.status(400).json({ error: 'Both field and value parameters are required.' });
+//     }
+
+//     const url = `${valorantTable}?filterByFormula=({${field}}='${value}')`;
+//     const headers = {
+//       Authorization: `Bearer ${apiKey}`,
+//     };
+
+//     const response = await axios.get(url, { headers });
+//     const allData = response.data.records;
+
+//     const desiredTimeZone = 'Asia/Kolkata'; // Change to your desired timezone
+
+//     const convertedData = allData.map(item => {
+//       // Convert date
+//       if (item.fields.Date) {
+//         const swedenDate = item.fields.Date; // Get the date value
+//         const convertedDate = moment.tz(swedenDate, 'YYYY-MM-DD', 'Europe/Stockholm').tz(desiredTimeZone);
+//         item.fields.Date = convertedDate.format('YYYY-MM-DD'); // Update the date field in the data
+//       }
+
+//       // Convert time
+//       if (item.fields.Time) {
+//         const swedenTime = item.fields.Time; // Get the time value
+//         const convertedTime = moment.tz(swedenTime, 'h:mm A', 'Europe/Stockholm').tz(desiredTimeZone);
+//         item.fields.Time = convertedTime.format('hh:mm A'); // Update the time field in the data
+//       }
+
+//       return item;
+//     });
+
+//     const filteredData = convertedData.filter(item => item.fields.upload === true);
+//     console.log(filteredData);
+
+//     res.json(filteredData);
+//   } catch (error) {
+//     console.error('Error fetching data from Airtable:', error);
+//     res.status(500).json({ error: 'An error occurred while fetching data.' });
+//   }
+// };
+
 
 const getSingleValorantMatch = async (req, res) => {
   try {
