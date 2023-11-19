@@ -86,7 +86,7 @@ const getAllSoccerMatchesByDate = async (req, res) => {
       if (item.fields.Time) {
         const swedenTime = item.fields.Time; // Get the time value
         const convertedTime = moment2.tz(swedenTime, 'h:mm A', 'Europe/Stockholm').tz(desiredTimeZone);
-        item.fields.Time = convertedTime.format('hh:mm A'); // Update the time field in the data
+        item.fields.Time = convertedTime.format('hh:mm'); // Update the time field in the data
       }
 
       return item;
