@@ -3,6 +3,7 @@ const csgoTable = config.db.csgoTableUrl;
 const apiKey = config.key.apiKey
 const axios = require('axios');
 const moment = require('moment');
+const convertedData = require("../utils/dateAndTimeConverter");
 
 
 const getAllCsgoMatches = async (req, res) => {
@@ -27,7 +28,7 @@ const getAllCsgoMatches = async (req, res) => {
 const getAllCsgoMatchesByDate = async (req, res) => {
   try {
 
-    const { value } = req.query;
+    const { value, timeZone } = req.query;
     const field = "Date";
 
     const dateComponents = value.split("-");
@@ -47,7 +48,9 @@ const getAllCsgoMatchesByDate = async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const filteredData = allData.filter((item) => item.fields.upload === true)
+    const convertedDatas = await convertedData(allData, timeZone);
+
+    const filteredData = convertedDatas.filter(item => item.fields.upload === true);
 
 
     res.json(filteredData);

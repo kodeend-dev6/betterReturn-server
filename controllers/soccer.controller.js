@@ -4,6 +4,7 @@ const apiKey = config.key.apiKey;
 const axios = require('axios');
 const moment = require('moment');
 const moment2 = require('moment-timezone');
+const convertedData = require("../utils/dateAndTimeConverter");
 
 
 const getAllSoccerMatches = async (req, res) => {
@@ -57,14 +58,21 @@ const getAllSoccerMatches = async (req, res) => {
 
 const getAllSoccerMatchesByDate = async (req, res) => {
   try {
-    const { value, timeZone } = req.query;
+    const { value,time, timeZone } = req.query;
     const field = "Date";
 
     if (!field || !value) {
       return res.status(400).json({ error: 'Both field and value parameters are required.' });
     }
 
-    const url = `${soccerTable}?filterByFormula=({${field}}='${value}')`;
+    
+      const currentDate = `${value} ${time}`;
+      const convertedDateTime = moment2.tz(currentDate, 'YYYY-MM-DD HH:mm', `${timeZone}`).tz('Europe/Stockholm');
+      const convertedDate = convertedDateTime.format('YYYY-MM-DD');
+      // const Time = convertedDateTime.format('HH:mm');
+      console.log(convertedDate)
+
+    const url = `${soccerTable}?filterByFormula=({${field}}='${convertedDate}')`;
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -72,28 +80,9 @@ const getAllSoccerMatchesByDate = async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const desiredTimeZone = `${timeZone}`; // Change to your desired timezone
+    const convertedDatas = await convertedData(allData, timeZone);
 
-    const convertedData = allData.map(item => {
-      // Convert date
-      if (item.fields.Date) {
-        const swedenDate = item.fields.Date; // Get the date value
-        const convertedDate = moment2.tz(swedenDate, 'YYYY-MM-DD', 'Europe/Stockholm').tz(desiredTimeZone);
-        item.fields.Date = convertedDate.format('YYYY-MM-DD'); // Update the date field in the data
-      }
-
-      // Convert time
-      if (item.fields.Time) {
-        const swedenTime = item.fields.Time; // Get the time value
-        const convertedTime = moment2.tz(swedenTime, 'h:mm A', 'Europe/Stockholm').tz(desiredTimeZone);
-        item.fields.Time = convertedTime.format('HH:mm'); // Update the time field in the data
-      }
-
-      return item;
-    });
-
-    const filteredData = convertedData.filter(item => item.fields.upload === true);
-    console.log(filteredData);
+    const filteredData = convertedDatas.filter(item => item.fields.upload === true);
 
     res.json(filteredData);
   } catch (error) {
