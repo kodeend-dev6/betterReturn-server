@@ -1,27 +1,29 @@
 const config = require('../config/config');
 const newsTable = config.db.newsTableUrl;
 const apiKey = config.key.apiKey;
-const axios = require('axios')
+const axios = require('axios');
+const catchAsync = require('../utils/errors/catchAsync');
+const sendResponse = require('../utils/sendResponse');
 
 
 
-const allNews = async (req, res) => {
-    try {
-        const response = await axios.get(`${newsTable}`, {
-            headers: { Authorization: `Bearer ${apiKey}` },
-            params: {
-                sort: [{ field: "Date", direction: "desc" }],
-                maxRecords: 15,
-            },
-        });
+const allNews = catchAsync(async (req, res) => {
+    const response = await axios.get(`${newsTable}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        params: {
+            sort: [{ field: "Date", direction: "desc" }],
+            maxRecords: 15,
+        },
+    });
 
-        const data = response.data.records;
-        res.status(200).json(data);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Failed to fetch news from Airtable.' });
-    }
-};
+    const data = response.data;
+
+    sendResponse(res, {
+        statusCode: 200,
+        message: "News retrieved successfully!",
+        data
+    })
+});
 
 
 
