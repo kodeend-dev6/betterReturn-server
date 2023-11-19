@@ -1,6 +1,6 @@
 const moment2 = require('moment-timezone');
 
-const convertedData = (allData) => {
+const convertedData = (allData, desiredTimeZone) => {
     allData.map(item => {
         // Convert date
         if (item.fields.Date) {
