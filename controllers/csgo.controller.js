@@ -3,7 +3,7 @@ const csgoTable = config.db.csgoTableUrl;
 const apiKey = config.key.apiKey
 const axios = require('axios');
 const moment = require('moment');
-const convertedData = require("../utils/dateAndTimeConverter");
+const { convertedToDB, convertedFromDBCSGO } = require("../utils/dateAndTimeConverter");
 
 
 const getAllCsgoMatches = async (req, res) => {
@@ -28,19 +28,20 @@ const getAllCsgoMatches = async (req, res) => {
 const getAllCsgoMatchesByDate = async (req, res) => {
   try {
 
-    const { value, timeZone } = req.query;
+    const { value, time, timeZone } = req.query;
     const field = "Date";
 
-    const dateComponents = value.split("-");
-    const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
 
-
-
-    if (!field || !date) {
+    if (!field || !value) {
       return res.status(400).json({ error: 'Both field and value parameters are required.' });
     }
 
-    const url = `${csgoTable}?filterByFormula=({${field}}='${date}')`;
+    const convertedDate = await convertedToDB(value, time, timeZone);
+
+    const dateComponents = convertedDate.split("-");
+    const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
+
+    const url = `${csgoTable}?filterByFormula=AND({${field}}='${date}', {upload}=1)`;
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -48,12 +49,9 @@ const getAllCsgoMatchesByDate = async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const convertedDatas = await convertedData(allData, timeZone);
+    const convertedDatas = await convertedFromDBCSGO(allData, timeZone);
 
-    const filteredData = convertedDatas.filter(item => item.fields.upload === true);
-
-
-    res.json(filteredData);
+    res.json(convertedDatas);
   } catch (error) {
     console.error('Error fetching data from Airtable:', error);
     res.status(500).json({ error: 'An error occurred while fetching data.' });

@@ -4,7 +4,7 @@ const apiKey = config.key.apiKey;
 const axios = require('axios');
 const moment = require('moment');
 const moment2 = require('moment-timezone');
-const convertedData = require("../utils/dateAndTimeConverter");
+const { convertedFromDB, convertedToDB } = require("../utils/dateAndTimeConverter");
 
 
 const getAllSoccerMatches = async (req, res) => {
@@ -25,54 +25,19 @@ const getAllSoccerMatches = async (req, res) => {
   }
 }
 
-
-// const getAllSoccerMatchesByDate = async (req, res) => {
-//   try {
-
-//     const { value } = req.query;
-//     const field = "Date";
-
-
-//     if (!field || !value) {
-//       return res.status(400).json({ error: 'Both field and value parameters are required.' });
-//     }
-
-//     const url = `${soccerTable}?filterByFormula=({${field}}='${value}')`;
-//     const headers = {
-//       Authorization: `Bearer ${apiKey}`,
-//     };
-
-//     const response = await axios.get(url, { headers });
-//     const allData = response.data.records;
-
-//     const filteredData = allData.filter((item) => item.fields.upload === true)
-
-
-//     res.json(filteredData);
-//   } catch (error) {
-//     console.error('Error fetching data from Airtable:', error);
-//     res.status(500).json({ error: 'An error occurred while fetching data.' });
-//   }
-// };
-
-
 const getAllSoccerMatchesByDate = async (req, res) => {
   try {
-    const { value,time, timeZone } = req.query;
+    const { value, time, timeZone } = req.query;
     const field = "Date";
 
     if (!field || !value) {
       return res.status(400).json({ error: 'Both field and value parameters are required.' });
     }
 
-    
-      const currentDate = `${value} ${time}`;
-      const convertedDateTime = moment2.tz(currentDate, 'YYYY-MM-DD HH:mm', `${timeZone}`).tz('Europe/Stockholm');
-      const convertedDate = convertedDateTime.format('YYYY-MM-DD');
-      // const Time = convertedDateTime.format('HH:mm');
-      console.log(convertedDate)
+    const convertedDate = await convertedToDB(value, time, timeZone);
 
-    const url = `${soccerTable}?filterByFormula=({${field}}='${convertedDate}')`;
+
+    const url = `${soccerTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -80,7 +45,7 @@ const getAllSoccerMatchesByDate = async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const convertedDatas = await convertedData(allData, timeZone);
+    const convertedDatas = await convertedFromDB(allData, timeZone);
 
     const filteredData = convertedDatas.filter(item => item.fields.upload === true);
 
