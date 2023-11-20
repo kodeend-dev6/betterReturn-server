@@ -63,8 +63,8 @@ const getAllCsgoMatchesByDate = async (req, res) => {
   
       let combinedData = [...data1.data.records, ...data2.data.records, ...data3.data.records];
 
-      const convertedDatas = await convertedFromDBCSGO(combinedData, timeZone);
-  
+      const filterData = combinedData.filter(data =>data.fields.Results)
+      const convertedDatas = await convertedFromDBCSGO(filterData, timeZone);
       res.json(convertedDatas);
     } catch (error) {
       console.error('Error:', error);
