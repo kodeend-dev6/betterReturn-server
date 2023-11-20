@@ -26,35 +26,80 @@ const getAllCsgoMatches = async (req, res) => {
 
 
 const getAllCsgoMatchesByDate = async (req, res) => {
-  try {
+  const { value, time, timeZone, filter } = req.query;
 
-    const { value, time, timeZone } = req.query;
-    const field = "Date";
+  if (filter === 'finished') {
+    try {
 
+      // const selectedDay = req.query.selectedDay;
+      const selectedDay = await convertedToDB(value, time, timeZone);
+  
+      const dateComponents = selectedDay.split("-");
+      const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
+  
+      const fristPrevious = moment(date, 'DD-MM-YYYY').subtract(1, 'days').format('DD-MM-YYYY');
+      const secondPrevious = moment(date, 'DD-MM-YYYY').subtract(2, 'days').format('DD-MM-YYYY');
+  
+      const [data1, data2, data3] = await Promise.all([
+        axios.get(csgoTable, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          params: {
+            filterByFormula: `AND({Date}='${date}', {upload}=1)`,
+          },
+        }),
+        axios.get(csgoTable, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          params: {
+            filterByFormula: `AND({Date}='${fristPrevious}', {upload}=1)`,
+          },
+        }),
+        axios.get(csgoTable, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          params: {
+            filterByFormula: `AND({Date}='${secondPrevious}', {upload}=1)`,
+          },
+        }),
+      ]);
+  
+      let combinedData = [...data1.data.records, ...data2.data.records, ...data3.data.records];
 
-    if (!field || !value) {
-      return res.status(400).json({ error: 'Both field and value parameters are required.' });
+      const convertedDatas = await convertedFromDBCSGO(combinedData, timeZone);
+  
+      res.json(convertedDatas);
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).send('Internal Server Error');
     }
 
-    const convertedDate = await convertedToDB(value, time, timeZone);
+  }
+  else {
+    try {
+      const field = "Date";
 
-    const dateComponents = convertedDate.split("-");
-    const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
+      if (!field || !value) {
+        return res.status(400).json({ error: 'Both field and value parameters are required.' });
+      }
 
-    const url = `${csgoTable}?filterByFormula=AND({${field}}='${date}', {upload}=1)`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
+      const convertedDate = await convertedToDB(value, time, timeZone);
 
-    const response = await axios.get(url, { headers });
-    const allData = response.data.records;
+      const dateComponents = convertedDate.split("-");
+      const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
 
-    const convertedDatas = await convertedFromDBCSGO(allData, timeZone);
+      const url = `${csgoTable}?filterByFormula=AND({${field}}='${date}', {upload}=1)`;
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+      };
 
-    res.json(convertedDatas);
-  } catch (error) {
-    console.error('Error fetching data from Airtable:', error);
-    res.status(500).json({ error: 'An error occurred while fetching data.' });
+      const response = await axios.get(url, { headers });
+      const allData = response.data.records;
+
+      const convertedDatas = await convertedFromDBCSGO(allData, timeZone);
+
+      res.json(convertedDatas);
+    } catch (error) {
+      console.error('Error fetching data from Airtable:', error);
+      res.status(500).json({ error: 'An error occurred while fetching data.' });
+    }
   }
 };
 

@@ -26,33 +26,87 @@ const getAllSoccerMatches = async (req, res) => {
 }
 
 const getAllSoccerMatchesByDate = async (req, res) => {
-  try {
-    const { value, time, timeZone } = req.query;
-    const field = "Date";
+  const { value, time, timeZone, filter } = req.query;
 
-    if (!field || !value) {
-      return res.status(400).json({ error: 'Both field and value parameters are required.' });
+  if (filter === 'finished') {
+    try {
+      
+      const selectedDay = await convertedToDB(value, time, timeZone);
+      const threeDaysAgo = moment(selectedDay).subtract(3, 'days').format('YYYY-MM-DD');
+
+      const field = 'Date';
+
+      const url = `${soccerTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>'${threeDaysAgo}', {upload}=1)&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=desc`;
+
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+      };
+
+      const response = await axios.get(url, { headers });
+      const allData = response.data.records;
+
+      const filterData = allData.filter(data => data.fields.Results);
+
+      const convertedDatas = await convertedFromDB(filterData, timeZone);
+
+      res.json(convertedDatas);
+    } catch (error) {
+      console.error('Previous match get error', error);
+      res.status(500).json({ error: 'An error occurred while fetching data.' });
     }
 
-    const convertedDate = await convertedToDB(value, time, timeZone);
+  }
+  else if (filter === 'schedule') {
+    try {
+      
+      const selectedDay = await convertedToDB(value, time, timeZone);
+      const threeDaysNext = moment(selectedDay).add(3, 'days').format('YYYY-MM-DD');
+
+      const field = 'Date';
+
+      const url = `${soccerTable}?filterByFormula=AND({${field}}>='${selectedDay}', {${field}}<='${threeDaysNext}', {upload}=1)&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=asc`;
+
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+      };
+
+      const response = await axios.get(url, { headers });
+      const allData = response.data.records;
+      const convertedDatas = await convertedFromDB(allData, timeZone);
+      res.json(convertedDatas);
+    } catch (error) {
+      console.error('Previous match get error', error);
+      res.status(500).json({ error: 'An error occurred while fetching data.' });
+    }
+  }
+  else {
+    try {
+      const field = "Date";
+
+      if (!field || !value) {
+        return res.status(400).json({ error: 'Both field and value parameters are required.' });
+      }
+
+      const convertedDate = await convertedToDB(value, time, timeZone);
 
 
-    const url = `${soccerTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
+      const url = `${soccerTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+      };
 
-    const response = await axios.get(url, { headers });
-    const allData = response.data.records;
+      const response = await axios.get(url, { headers });
+      const allData = response.data.records;
 
-    const convertedDatas = await convertedFromDB(allData, timeZone);
+      const convertedDatas = await convertedFromDB(allData, timeZone);
 
-    const filteredData = convertedDatas.filter(item => item.fields.upload === true);
+      const filteredData = convertedDatas.filter(item => item.fields.upload === true);
 
-    res.json(filteredData);
-  } catch (error) {
-    console.error('Error fetching data from Airtable:', error);
-    res.status(500).json({ error: 'An error occurred while fetching data.' });
+      res.json(filteredData);
+    } catch (error) {
+      console.error('Error fetching data from Airtable:', error);
+      res.status(500).json({ error: 'An error occurred while fetching data.' });
+    }
   }
 };
 
