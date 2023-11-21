@@ -29,31 +29,56 @@ const getAllValorantMatches = async (req, res) => {
 const getAllValorantMatchesByDate = async (req, res) => {
   const { value, time, timeZone, filter } = req.query;
 
-  try {
+  if (filter === 'finished') {
+    try {
+      const selectedDay = await convertedToDBValorant(value, time, timeZone);
+      const threeDaysAgo = moment(selectedDay).subtract(3, 'days').format('YYYY-MM-DD');
 
-    const field = "Date";
+      const field = 'Date';
 
+      const url = `${valorantTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>'${threeDaysAgo}', {upload}=1)&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=desc`;
 
-    if (!field || !value) {
-      return res.status(400).json({ error: 'Both field and value parameters are required.' });
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+      };
+
+      const response = await axios.get(url, { headers });
+      const allData = response.data.records;
+
+      const convertedDatas = await convertedFromDBValorant(allData, timeZone);
+
+      res.json(convertedDatas);
+    } catch (error) {
+      console.error('Previous match get error', error);
+      res.status(500).json({ error: 'An error occurred while fetching data.' });
     }
+  } else {
+    try {
 
-    const convertedDate = await convertedToDBValorant(value, time, timeZone);
+      const field = "Date";
 
-    const url = `${valorantTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
 
-    const response = await axios.get(url, { headers });
-    const allData = response.data.records;
+      if (!field || !value) {
+        return res.status(400).json({ error: 'Both field and value parameters are required.' });
+      }
 
-    const convertedDatas = await convertedFromDBValorant(allData, timeZone);
+      const convertedDate = await convertedToDBValorant(value, time, timeZone);
 
-    res.json(convertedDatas);
-  } catch (error) {
-    console.error('Error fetching data from Airtable:', error);
-    res.status(500).json({ error: 'An error occurred while fetching data.' });
+      const url = `${valorantTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
+      const headers = {
+        Authorization: `Bearer ${apiKey}`,
+      };
+
+      const response = await axios.get(url, { headers });
+      const allData = response.data.records;
+
+      const convertedDatas = await convertedFromDBValorant(allData, timeZone);
+
+      res.json(convertedDatas);
+    } catch (error) {
+      console.error('Error fetching data from Airtable:', error);
+      res.status(500).json({ error: 'An error occurred while fetching data.' });
+    }
   }
 };
 
@@ -178,8 +203,8 @@ const createNewValorantMatch = async (req, res) => {
 
 const updateOneValorantMatch = async (req, res) => {
   const { recordId } = req.params;
-  const {fields} = req.body;
-  
+  const { fields } = req.body;
+
 
   try {
     const airtableURL = `${valorantTable}/${recordId}`;
@@ -227,4 +252,4 @@ const deleteOneValorantMatch = async (req, res) => {
 
 
 
-module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate, createNewValorantMatch, updateOneValorantMatch, deleteOneValorantMatch, getAllFinishedValorantMatches}
+module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate, createNewValorantMatch, updateOneValorantMatch, deleteOneValorantMatch, getAllFinishedValorantMatches }
