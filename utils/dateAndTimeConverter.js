@@ -8,6 +8,33 @@ const convertedToDB = async (value, time, timeZone) => {
   return convertedDate;
 }
 
+
+const convertedToDBValorant = async (value, time, timeZone) => {
+  const currentDate = `${value} ${time}`;
+  const convertedDateTime = moment2.tz(currentDate, 'YYYY-MM-DD HH:mm', `${timeZone}`).tz('Asia/Dhaka');
+  const convertedDate = convertedDateTime.format('YYYY-MM-DD');
+  return convertedDate;
+}
+
+
+
+const convertedFromDBValorant = async (allData, desiredTimeZone) => {
+  const item = await allData.map(item => {
+    // Convert date and time
+    if (item.fields.Date && item.fields.Time) {
+      const bdDateTime = `${item.fields.Date} ${item.fields.Time}`;
+      const convertedDateTime = moment2.tz(bdDateTime, 'YYYY-MM-DD h:mm A', 'Asia/Dhaka').tz(desiredTimeZone);
+
+      item.fields.Date = convertedDateTime.format('YYYY-MM-DD'); // Update the date field
+      item.fields.Time = convertedDateTime.format('HH:mm'); // Update the time field
+    }
+
+    return item;
+  });
+
+  return item
+};
+
 const convertedFromDB = async (allData, desiredTimeZone) => {
   const item = await allData.map(item => {
     // Convert date and time
@@ -43,4 +70,4 @@ const convertedFromDBCSGO = async (allData, desiredTimeZone) => {
   return item
 };
 
-module.exports = { convertedFromDB, convertedToDB, convertedFromDBCSGO }
+module.exports = { convertedFromDB, convertedToDB, convertedFromDBCSGO, convertedToDBValorant, convertedFromDBValorant }

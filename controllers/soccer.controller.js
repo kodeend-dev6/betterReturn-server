@@ -100,9 +100,7 @@ const getAllSoccerMatchesByDate = async (req, res) => {
 
       const convertedDatas = await convertedFromDB(allData, timeZone);
 
-      const filteredData = convertedDatas.filter(item => item.fields.upload === true);
-
-      res.json(filteredData);
+      res.json(convertedDatas);
     } catch (error) {
       console.error('Error fetching data from Airtable:', error);
       res.status(500).json({ error: 'An error occurred while fetching data.' });

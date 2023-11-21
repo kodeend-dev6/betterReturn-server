@@ -4,6 +4,7 @@ const apiKey = config.key.apiKey
 const axios = require('axios');
 const moment = require('moment');
 const moment2 = require('moment-timezone');
+const { convertedToDBValorant, convertedFromDBValorant } = require("../utils/dateAndTimeConverter");
 
 
 const getAllValorantMatches = async (req, res) => {
@@ -26,9 +27,10 @@ const getAllValorantMatches = async (req, res) => {
 
 
 const getAllValorantMatchesByDate = async (req, res) => {
+  const { value, time, timeZone, filter } = req.query;
+
   try {
 
-    const { value } = req.query;
     const field = "Date";
 
 
@@ -36,7 +38,9 @@ const getAllValorantMatchesByDate = async (req, res) => {
       return res.status(400).json({ error: 'Both field and value parameters are required.' });
     }
 
-    const url = `${valorantTable}?filterByFormula=({${field}}='${value}')`;
+    const convertedDate = await convertedToDBValorant(value, time, timeZone);
+
+    const url = `${valorantTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
@@ -44,11 +48,9 @@ const getAllValorantMatchesByDate = async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const filteredData = allData.filter((item) => item.fields.upload === true)
-    console.log(filteredData)
+    const convertedDatas = await convertedFromDBValorant(allData, timeZone);
 
-
-    res.json(filteredData);
+    res.json(convertedDatas);
   } catch (error) {
     console.error('Error fetching data from Airtable:', error);
     res.status(500).json({ error: 'An error occurred while fetching data.' });
