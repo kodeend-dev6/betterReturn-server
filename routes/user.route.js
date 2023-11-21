@@ -8,10 +8,11 @@ const {
   updateUserInfo,
   getSingleUser,
 } = require("../controllers/user.controller");
+const upload = require("../utils/upload");
 
 router.get("/", getAllUser);
 router.get("/get", verifyToken, getSingleUser);
-router.put("/update", updateUserInfo);
+router.put("/update", upload.single("Image"), updateUserInfo);
 router.put("/plan/:userID", buyPlan);
 
 module.exports = router;
