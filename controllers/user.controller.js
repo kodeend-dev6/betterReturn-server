@@ -89,7 +89,6 @@ const updateUserInfo = async (req, res) => {
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
-
     const data = { fields };
 
     const response = await axios.patch(airtableURL, data, { headers });
