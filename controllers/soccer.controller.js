@@ -52,7 +52,7 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
 
     const filterData = allData.filter((data) => data.fields.Results);
 
-    const convertedDatas = await convertedFromDB(filterData, timeZone, value);
+    const convertedDatas = await convertedFromDB(filterData, timeZone);
 
     sendResponse(res, {
       statusCode: 200,
@@ -78,7 +78,7 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
 
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
-    const convertedDatas = await convertedFromDB(allData, timeZone, value);
+    const convertedDatas = await convertedFromDB(allData, timeZone);
 
     sendResponse(res, {
       statusCode: 200,
