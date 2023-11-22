@@ -72,17 +72,15 @@ const getAllValorantMatchesByDate = catchAsync(async (req, res) => {
       .format("YYYY-MM-DD");
     const endDate = moment(convertedDate).add(1, "days").format("YYYY-MM-DD");
 
-    // const url = `${valorantTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
-
-    const response = await axios.get(url, {
-      headers,
+    const response = await axios.get(valorantTable, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
       params: {
-        filterByFormula: `AND(OR({${field}}='${startDate}', {${field}}='${convertedDate}', {${field}}='${endDate}'), {upload}=1)))`,
+        filterByFormula: `AND(OR({${field}}='${startDate}', {${field}}='${convertedDate}', {${field}}='${endDate}'), {upload}=1)`,
       },
     });
+
     const allData = response.data.records;
 
     const convertedDatas = await convertedFromDBValorant(
