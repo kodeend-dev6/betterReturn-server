@@ -1,62 +1,62 @@
 const axios = require("axios");
 const config = require("../config/config");
+const catchAsync = require("../utils/errors/catchAsync");
+const sendResponse = require("../utils/sendResponse");
 const soccerTable = config.db.soccerTableUrl;
 const csgoTable = config.db.csgoTableUrl;
 const valorantTable = config.db.valorantTableUrl;
 const apiKey = config.key.apiKey;
 
-const searchGame = async (req, res) => {
-    try {
-        let gameName = req.query.game;
+const searchGame = catchAsync(async (req, res) => {
+  const { search, game } = req.query;
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+  const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-        gameName = gameName.replace(/\s+/g, ' ');
+  let table = soccerTable;
+  let filter = `OR(
+    REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedSearch}')),
+    REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
+    REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
+)`;
+  if (game === "csgo") {
+    table = csgoTable;
+    filter = `OR(
+    REGEX_MATCH(LOWER({Team1}), LOWER('${escapedSearch}')),
+    REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}')),
+    REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
+)`;
+  } else if (game === "valorant") {
+    table = valorantTable;
+    filter = `OR(
+    REGEX_MATCH(LOWER({Team1}), LOWER('${escapedSearch}')),
+    REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}'))
+    REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
+)`;
+  }
 
-        const escapedGame = gameName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const { data } = await axios.get(table, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+    params: {
+      filterByFormula: filter,
+      pageSize: limit,
+      offset,
+    },
+  });
 
-        // Use Axios to fetch data from Airtable tables
-        const [data1, data2, data3] = await Promise.all([
-            axios.get(soccerTable, {
-                headers: { Authorization: `Bearer ${apiKey}` },
-                params: {
-                    filterByFormula: `OR(
-                        REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedGame}')),
-                        REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedGame}')),
-                        REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedGame}'))
-                       
-                       )`,
-                },
-            }),
-            axios.get(csgoTable, {
-                headers: { Authorization: `Bearer ${apiKey}` },
-                params: {
-                    filterByFormula: `OR(
-                        REGEX_MATCH(LOWER({Team1}), LOWER('${escapedGame}')),
-                        REGEX_MATCH(LOWER({Team2}), LOWER('${escapedGame}'))
-                    )`,
-                },
-            }),
-            axios.get(valorantTable, {
-                headers: { Authorization: `Bearer ${apiKey}` },
-                params: {
-                    filterByFormula: `OR(
-                        REGEX_MATCH(LOWER({Team1}), LOWER('${escapedGame}')),
-                        REGEX_MATCH(LOWER({Team2}), LOWER('${escapedGame}'))
-                    )`,
-                },
-            }),
-        ]);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Search Successful",
+data: data?.records,
+    meta: {
+      page,
+      limit,
+      totalPages: Math.ceil(data?.records?.length / limit),
+      totalRecords: data?.records?.length,
+    },
+  });
+});
 
-        let combinedData = {
-            soccer: data1.data.records,
-            csgo: data2.data.records,
-            valorant: data3.data.records
-        };
-
-        res.json(combinedData);
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).send('Internal Server Error');
-    }
-};
-
-module.exports = { searchGame }
+module.exports = { searchGame };
