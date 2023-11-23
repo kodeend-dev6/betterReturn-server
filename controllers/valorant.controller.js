@@ -147,7 +147,6 @@ const getAllValorantMatchesByDate = catchAsync(async (req, res) => {
 
 const getSingleValorantMatch = catchAsync(async (req, res) => {
   const matchID = req.params.matchID;
-  console.log(matchID);
 
   const url = `${valorantTable}/${matchID}`;
   const headers = {
@@ -158,6 +157,7 @@ const getSingleValorantMatch = catchAsync(async (req, res) => {
   const data = response.data;
 
   sendResponse(res, {
+    statusCode: 200,
     success: true,
     message: "Valorant Match retrieved successfully",
     data,
