@@ -6,9 +6,12 @@ const { isFreetierUsed } = require("../helper/checkFreeTier");
 const catchAsync = require("../utils/errors/catchAsync");
 const { findUser } = require("../helper/user.helper");
 const sendResponse = require("../utils/sendResponse");
+const cloudinaryUpload = require("../utils/cloudinary");
+const fs = require("fs");
+const ApiError = require("../utils/errors/ApiError");
+const path = require("path");
 
 const getAllUser = async (req, res) => {
-
   try {
     const response = await axios.get(userTable, {
       headers: {
@@ -44,7 +47,9 @@ const buyPlan = async (req, res) => {
     const FreeTierUsed = await isFreetierUsed(fields.Email);
 
     if (!FreeTierUsed) {
-      return res.send("You have already used the free plan. Please Make payment");
+      return res.send(
+        "You have already used the free plan. Please Make payment"
+      );
     }
 
     const airtableURL = `${userTable}/${userID}`;
@@ -80,30 +85,46 @@ const buyPlan = async (req, res) => {
   }
 };
 
-const updateUserInfo = async (req, res) => {
+const updateUserInfo = catchAsync(async (req, res) => {
   const recordId = req.query.id;
-  const { fields } = req.body;
+  const input = req.body;
+  const file = req?.file?.filename;
 
-  try {
-    const airtableURL = `${userTable}/${recordId}`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
-    const data = { fields };
+  if (file) {
+    const filePath = `./images/${file}`;
+    const fileName = path.parse(file).name;
 
-    const response = await axios.patch(airtableURL, data, { headers });
+    const { url } = await cloudinaryUpload(fileName, filePath);
+    input.Image = url;
 
-    if (response.status === 200) {
-      res.status(200).json({ message: "Record updated successfully" });
-    } else {
-      res.status(response.status).json(response.data);
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error updating the record" });
+    // Deleting local file
+    fs.unlinkSync(filePath);
   }
-};
 
+  // Update to airtable
+  const airtableURL = `${userTable}/${recordId}`;
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  const data = { fields: input };
+
+  const response = await axios.patch(airtableURL, data, { headers });
+
+  if (response.status === 200) {
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "User Updated Successfully",
+      data: response?.data,
+    });
+  } else {
+    throw new ApiError(
+      response?.status || 500,
+      response?.data?.error?.message || "Internal Server Error"
+    );
+  }
+});
 
 module.exports = {
   getAllUser,

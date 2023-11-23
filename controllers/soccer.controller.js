@@ -27,6 +27,7 @@ const getAllSoccerMatches = async (req, res) => {
 
 const getAllSoccerMatchesByDate = async (req, res) => {
   const { value, time, timeZone, filter } = req.query;
+  console.log(req.user);
 
   if (filter === 'finished') {
     try {
