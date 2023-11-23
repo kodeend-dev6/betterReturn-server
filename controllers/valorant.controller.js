@@ -1,17 +1,20 @@
 const config = require("../config/config");
 const valorantTable = config.db.valorantTableUrl;
-const apiKey = config.key.apiKey
-const axios = require('axios');
-const moment = require('moment');
-const moment2 = require('moment-timezone');
-const { convertedToDBValorant, convertedFromDBValorant } = require("../utils/dateAndTimeConverter");
-
+const apiKey = config.key.apiKey;
+const axios = require("axios");
+const moment = require("moment");
+const moment2 = require("moment-timezone");
+const {
+  convertedToDBValorant,
+  convertedFromDBValorant,
+} = require("../utils/dateAndTimeConverter");
+const catchAsync = require("../utils/errors/catchAsync");
+const sendResponse = require("../utils/sendResponse");
 
 const getAllValorantMatches = async (req, res) => {
   try {
-
     const headers = {
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     };
 
     const response = await axios.get(valorantTable, { headers });
@@ -21,66 +24,79 @@ const getAllValorantMatches = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to fetch data from Airtable' });
-  }
-}
-
-
-const getAllValorantMatchesByDate = async (req, res) => {
-  const { value, time, timeZone, filter } = req.query;
-
-  if (filter === 'finished') {
-    try {
-      const selectedDay = await convertedToDBValorant(value, time, timeZone);
-      const threeDaysAgo = moment(selectedDay).subtract(3, 'days').format('YYYY-MM-DD');
-
-      const field = 'Date';
-
-      const url = `${valorantTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>'${threeDaysAgo}', {upload}=1)&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=desc`;
-
-      const headers = {
-        Authorization: `Bearer ${apiKey}`,
-      };
-
-      const response = await axios.get(url, { headers });
-      const allData = response.data.records;
-
-      const convertedDatas = await convertedFromDBValorant(allData, timeZone);
-
-      res.json(convertedDatas);
-    } catch (error) {
-      console.error('Previous match get error', error);
-      res.status(500).json({ error: 'An error occurred while fetching data.' });
-    }
-  } else {
-    try {
-
-      const field = "Date";
-
-
-      if (!field || !value) {
-        return res.status(400).json({ error: 'Both field and value parameters are required.' });
-      }
-
-      const convertedDate = await convertedToDBValorant(value, time, timeZone);
-
-      const url = `${valorantTable}?filterByFormula=AND({${field}}='${convertedDate}', {upload}=1)`;
-      const headers = {
-        Authorization: `Bearer ${apiKey}`,
-      };
-
-      const response = await axios.get(url, { headers });
-      const allData = response.data.records;
-
-      const convertedDatas = await convertedFromDBValorant(allData, timeZone);
-
-      res.json(convertedDatas);
-    } catch (error) {
-      console.error('Error fetching data from Airtable:', error);
-      res.status(500).json({ error: 'An error occurred while fetching data.' });
-    }
+    res.status(500).json({ error: "Failed to fetch data from Airtable" });
   }
 };
+
+// Get All valorant matches including finished
+const getAllValorantMatchesByDate = catchAsync(async (req, res) => {
+  const { value, time, timeZone, filter } = req.query;
+
+  if (filter === "finished") {
+    const selectedDay = await convertedToDBValorant(value, time, timeZone);
+    const threeDaysAgo = moment(selectedDay)
+      .subtract(3, "days")
+      .format("YYYY-MM-DD");
+
+    const field = "Date";
+
+    const url = `${valorantTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>'${threeDaysAgo}', {upload}=1)&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=desc`;
+
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+
+    const response = await axios.get(url, { headers });
+    const allData = response.data.records;
+
+    const convertedDatas = await convertedFromDBValorant(allData, timeZone);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Valorant Match retrieved successfully",
+      data: convertedDatas,
+    });
+  } else {
+    const field = "Date";
+
+    if (!field || !value) {
+      return res
+        .status(400)
+        .json({ error: "Both field and value parameters are required." });
+    }
+
+    const convertedDate = await convertedToDBValorant(value, time, timeZone);
+    const startDate = moment(convertedDate)
+      .subtract(1, "days")
+      .format("YYYY-MM-DD");
+    const endDate = moment(convertedDate).add(1, "days").format("YYYY-MM-DD");
+
+    const response = await axios.get(valorantTable, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      params: {
+        filterByFormula: `AND(OR({${field}}='${startDate}', {${field}}='${convertedDate}', {${field}}='${endDate}'), {upload}=1)`,
+      },
+    });
+
+    const allData = response.data.records;
+
+    const convertedDatas = await convertedFromDBValorant(
+      allData,
+      timeZone,
+      value
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Valorant Match retrieved successfully",
+      data: convertedDatas,
+    });
+  }
+});
 
 // const getAllValorantMatchesByDate = async (req, res) => {
 //   try {
@@ -129,35 +145,33 @@ const getAllValorantMatchesByDate = async (req, res) => {
 //   }
 // };
 
+const getSingleValorantMatch = catchAsync(async (req, res) => {
+  const matchID = req.params.matchID;
 
-const getSingleValorantMatch = async (req, res) => {
-  try {
+  const url = `${valorantTable}/${matchID}`;
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+  };
 
-    const matchID = req.params.matchID;
-    console.log(matchID)
+  const response = await axios.get(url, { headers });
+  const data = response.data;
 
-    const url = `${valorantTable}/${matchID}`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
-
-    const response = await axios.get(url, { headers });
-    const data = response.data;
-
-
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching data from Airtable:', error);
-    res.status(500).json({ error: 'An error occurred while fetching data.' });
-  }
-};
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Valorant Match retrieved successfully",
+    data,
+  });
+});
 
 const getAllFinishedValorantMatches = async (req, res) => {
   try {
     const selectedDay = req.query.selectedDay;
-    const threeDaysAgo = moment(selectedDay).subtract(3, 'days').format('YYYY-MM-DD');
+    const threeDaysAgo = moment(selectedDay)
+      .subtract(3, "days")
+      .format("YYYY-MM-DD");
 
-    const field = 'Date';
+    const field = "Date";
 
     const url = `${valorantTable}?filterByFormula=AND({${field}}<='${selectedDay}', {${field}}>'${threeDaysAgo}')&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=desc`;
 
@@ -172,13 +186,12 @@ const getAllFinishedValorantMatches = async (req, res) => {
 
     res.json(filteredData);
   } catch (error) {
-    console.error('Previous match get error', error);
-    res.status(500).json({ error: 'An error occurred while fetching data.' });
+    console.error("Previous match get error", error);
+    res.status(500).json({ error: "An error occurred while fetching data." });
   }
 };
 
 const createNewValorantMatch = async (req, res) => {
-
   const { fields } = req.body;
   const data = { fields };
 
@@ -186,25 +199,23 @@ const createNewValorantMatch = async (req, res) => {
     const response = await axios.post(valorantTable, data, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
-    console.log('Record added successfully:', response.data);
+    console.log("Record added successfully:", response.data);
     res.status(201).json({
       success: true,
-      message: "Successfully added.."
+      message: "Successfully added..",
     });
   } catch (error) {
-    console.error('Error adding record:', error);
-    res.status(500).send('Error adding record to Airtable.');
+    console.error("Error adding record:", error);
+    res.status(500).send("Error adding record to Airtable.");
   }
 };
-
 
 const updateOneValorantMatch = async (req, res) => {
   const { recordId } = req.params;
   const { fields } = req.body;
-
 
   try {
     const airtableURL = `${valorantTable}/${recordId}`;
@@ -217,13 +228,13 @@ const updateOneValorantMatch = async (req, res) => {
     const response = await axios.patch(airtableURL, data, { headers });
 
     if (response.status === 200) {
-      res.status(200).json({ message: 'Record updated successfully' });
+      res.status(200).json({ message: "Record updated successfully" });
     } else {
       res.status(response.status).json(response.data);
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error updating the record' });
+    res.status(500).json({ message: "Error updating the record" });
   }
 };
 
@@ -239,17 +250,22 @@ const deleteOneValorantMatch = async (req, res) => {
     const response = await axios.delete(airtableURL, { headers });
 
     if (response.status === 200) {
-      res.status(204).json({ message: 'Record deleted successfully' });
+      res.status(204).json({ message: "Record deleted successfully" });
     } else {
       res.status(response.status).json(response.data);
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error deleting the record' });
+    res.status(500).json({ message: "Error deleting the record" });
   }
 };
 
-
-
-
-module.exports = { getAllValorantMatches, getSingleValorantMatch, getAllValorantMatchesByDate, createNewValorantMatch, updateOneValorantMatch, deleteOneValorantMatch, getAllFinishedValorantMatches }
+module.exports = {
+  getAllValorantMatches,
+  getSingleValorantMatch,
+  getAllValorantMatchesByDate,
+  createNewValorantMatch,
+  updateOneValorantMatch,
+  deleteOneValorantMatch,
+  getAllFinishedValorantMatches,
+};
