@@ -9,11 +9,13 @@ const apiKey = config.key.apiKey;
 
 const searchGame = catchAsync(async (req, res) => {
   const { search, game } = req.query;
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 100;
+  const page =  1;
+  const limit = 100;
   const offset = Math.max(0, (page - 1) * limit);
 
   const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // const apiUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}?sort%5B0%5D%5Bfield%5D=${fieldToSort}&sort%5B0%5D%5Bdirection%5D=asc`
 
   let table = soccerTable;
   let filter = `AND(
@@ -22,7 +24,7 @@ const searchGame = catchAsync(async (req, res) => {
         REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
         REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
     ),
-    NOT({MatchResults} = BLANK())
+    NOT({MatchResults} = BLANK())&sort%5B0%5D%5Bfield%5D={Date}&sort%5B0%5D%5Bdirection%5D=asc
 )`;
   if (game === "csgo") {
     table = csgoTable;
