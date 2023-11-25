@@ -17,7 +17,7 @@ const searchGame = catchAsync(async (req, res) => {
 
   const today = new Date(); // Get today's date
   const previousDate = new Date();
-  previousDate.setDate(today.getDate() - 20); // Specify the number of days before today
+  previousDate.setDate(today.getDate() - 30); // Specify the number of days before today
 
   // Convert dates to Airtable-compatible string format (YYYY-MM-DD)
   const formattedToday = today.toISOString().split('T')[0];
