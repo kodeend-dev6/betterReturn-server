@@ -24,7 +24,7 @@ const searchGame = catchAsync(async (req, res) => {
         REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
         REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
     ),
-    NOT({MatchResults} = BLANK())&sort%5B0%5D%5Bfield%5D={Date}&sort%5B0%5D%5Bdirection%5D=asc
+    NOT({MatchResults} = BLANK())
 )`;
   if (game === "csgo") {
     table = csgoTable;
