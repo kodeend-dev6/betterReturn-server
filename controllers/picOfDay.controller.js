@@ -36,18 +36,6 @@ const getPickOfDay = async (req, res) => {
             }),
         ]);
 
-        const data2Formated = await data2.data.records.map((item) => {
-            if (item.fields.Date) {
-                const dateComponents = item.fields.Date.split("-");
-                const date = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0];
-                item.fields.Date = date;
-            }
-            return item;
-        })
-
-        console.log("updated: ",data2Formated);
-        console.log("previou: ",data2.data.records)
-
         let combinedData = [...data1.data.records, ...data2.data.records, ...data3.data.records]
 
         res.json(combinedData);
