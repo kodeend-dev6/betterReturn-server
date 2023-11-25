@@ -47,29 +47,21 @@ const convertedFromDBValorant = async (
   return convertedData;
 };
 
-const convertedFromDB = async (allData, desiredTimeZone, desiredDate) => {
-  const convertedData = [];
-  for (const item of allData) {
+const convertedFromDB = async (allData, desiredTimeZone) => {
+  const item = await allData.map(item => {
+    // Convert date and time
     if (item.fields.Date && item.fields.Time) {
       const swedenDateTime = `${item.fields.Date} ${item.fields.Time}`;
-      const convertedDateTime = moment2
-        .tz(swedenDateTime, "YYYY-MM-DD HH:mm", "Europe/Stockholm")
-        .tz(desiredTimeZone);
+      const convertedDateTime = moment2.tz(swedenDateTime, 'YYYY-MM-DD h:mm A', 'Europe/Stockholm').tz(desiredTimeZone);
 
-      if (
-        desiredDate &&
-        convertedDateTime.format("YYYY-MM-DD") !== desiredDate
-      ) {
-        continue;
-      }
-
-      item.fields.Date = convertedDateTime.format("YYYY-MM-DD"); // Update the date field
-      item.fields.Time = convertedDateTime.format("HH:mm"); // Update the time field
+      item.fields.Date = convertedDateTime.format('YYYY-MM-DD'); // Update the date field
+      item.fields.Time = convertedDateTime.format('HH:mm'); // Update the time field
     }
 
-    convertedData.push(item);
-  }
-  return convertedData;
+    return item;
+  });
+
+  return item
 };
 
 const convertedFromDBCSGO = async (allData, desiredTimeZone, desiredDate) => {
