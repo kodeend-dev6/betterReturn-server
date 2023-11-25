@@ -15,8 +15,6 @@ const searchGame = catchAsync(async (req, res) => {
 
   const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  // const apiUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}?sort%5B0%5D%5Bfield%5D=${fieldToSort}&sort%5B0%5D%5Bdirection%5D=asc`
-
   const today = new Date(); // Get today's date
   const previousDate = new Date();
   previousDate.setDate(today.getDate() - 20); // Specify the number of days before today
@@ -24,6 +22,12 @@ const searchGame = catchAsync(async (req, res) => {
   // Convert dates to Airtable-compatible string format (YYYY-MM-DD)
   const formattedToday = today.toISOString().split('T')[0];
   const formattedPreviousDate = previousDate.toISOString().split('T')[0];
+
+  const dateComponents = formattedPreviousDate.split("-");
+  const preCsgoDate = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0]
+
+  const todayDateComponents = formattedToday.split("-");
+  const todayCsgoDate = todayDateComponents[2] + "-" + todayDateComponents[1] + "-" + todayDateComponents[0]
 
   let filter;
   let table;
@@ -34,20 +38,26 @@ const searchGame = catchAsync(async (req, res) => {
     REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
     ),
-    NOT({Results} = BLANK())
+    NOT({Results} = BLANK()),
+    {Date} >= '${preCsgoDate}',
+    {Date} <= '${todayCsgoDate}',
+    {upload}=1
 )`;
   } else if (game === "valorant") {
     table = valorantTable;
     filter = `AND(OR(
     REGEX_MATCH(LOWER({Team1}), LOWER('${escapedSearch}')),
-    REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}'))
+    REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
     ),
-    NOT({Result} = BLANK())
+    NOT({Result} = BLANK()),
+    {Date} >= '${formattedPreviousDate}',
+    {Date} <= '${formattedToday}',
+    {upload}=1
 )`;
   } else {
     table = soccerTable;
-     filter = `AND(
+    filter = `AND(
       OR(
           REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedSearch}')),
           REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
@@ -66,7 +76,7 @@ const searchGame = catchAsync(async (req, res) => {
       filterByFormula: filter,
       pageSize: limit,
       offset,
-      // sort: [{ field: 'Date', direction: 'desc' }]
+      sort: [{ field: 'Date', direction: 'desc' }]
     },
   });
 
