@@ -15,24 +15,30 @@ const searchGame = catchAsync(async (req, res) => {
   const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   let table = soccerTable;
-  let filter = `OR(
+  let filter = `AND(OR(
     REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
+    ),
+    NOT({MatchResults} = BLANK())
 )`;
   if (game === "csgo") {
     table = csgoTable;
-    filter = `OR(
+    filter = `AND(OR(
     REGEX_MATCH(LOWER({Team1}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
+    ),
+    NOT({Results} = BLANK()
 )`;
   } else if (game === "valorant") {
     table = valorantTable;
-    filter = `OR(
+    filter = `AND(OR(
     REGEX_MATCH(LOWER({Team1}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}'))
     REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
+    ),
+    NOT({Result} = BLANK())
 )`;
   }
 
@@ -49,7 +55,7 @@ const searchGame = catchAsync(async (req, res) => {
     statusCode: 200,
     success: true,
     message: "Search Successful",
-data: data?.records,
+    data: data?.records,
     meta: {
       page,
       limit,
