@@ -41,15 +41,17 @@ const getSingleUser = catchAsync(async (req, res) => {
 
 const buyPlan = async (req, res) => {
   try {
-    const userID = req.params.userID;
+    const userID = req.query.userID;
     const { fields } = req.body;
 
     const FreeTierUsed = await isFreetierUsed(fields.Email);
 
+
+
     if (!FreeTierUsed) {
-      return res.send(
-        "You have already used the free plan. Please Make payment"
-      );
+      return res.json({
+        message: "You have already Used the Free Plan. Please pay Now."
+      });
     }
 
     const airtableURL = `${userTable}/${userID}`;
@@ -66,6 +68,7 @@ const buyPlan = async (req, res) => {
     data.fields["Plan_start_date"] = today.toISOString();
 
     if (fields.Plan_name === "Basic") {
+
       data.fields["FreeTier"] = true;
       data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
     } else {
