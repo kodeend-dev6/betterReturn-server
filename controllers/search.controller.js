@@ -15,10 +15,11 @@ const searchGame = catchAsync(async (req, res) => {
   const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   let table = soccerTable;
-  let filter = `AND(OR(
-    REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedSearch}')),
-    REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
-    REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
+  let filter = `AND(
+    OR(
+        REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedSearch}')),
+        REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
+        REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
     ),
     NOT({MatchResults} = BLANK())
 )`;
@@ -51,6 +52,8 @@ const searchGame = catchAsync(async (req, res) => {
     },
   });
 
+  console.log(data.records.length);
+
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -59,8 +62,8 @@ const searchGame = catchAsync(async (req, res) => {
     meta: {
       page,
       limit,
-      totalPages: Math.ceil(data?.records?.length / limit),
-      totalRecords: data?.records?.length,
+      // totalPages: Math.ceil(data?.records?.length / limit),
+      // totalRecords: data?.records?.length,
     },
   });
 });
