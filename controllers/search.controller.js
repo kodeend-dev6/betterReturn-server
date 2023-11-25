@@ -10,8 +10,9 @@ const apiKey = config.key.apiKey;
 const searchGame = catchAsync(async (req, res) => {
   const { search, game } = req.query;
   const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 10;
-  const offset = (page - 1) * limit;
+  const limit = Number(req.query.limit) || 100;
+  const offset = Math.max(0, (page - 1) * limit);
+
   const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   let table = soccerTable;
@@ -43,7 +44,7 @@ const searchGame = catchAsync(async (req, res) => {
 )`;
   }
 
-  const { data } = await axios.get(table, {
+  const { data: { records, offset: returnedOffset, totalRecords } } = await axios.get(table, {
     headers: { Authorization: `Bearer ${apiKey}` },
     params: {
       filterByFormula: filter,
@@ -52,18 +53,21 @@ const searchGame = catchAsync(async (req, res) => {
     },
   });
 
-  console.log(data.records.length);
+
+
+  const totalPages = Math.ceil(totalRecords / limit);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "Search Successful",
-    data: data?.records,
+    data: records,
     meta: {
       page,
       limit,
-      // totalPages: Math.ceil(data?.records?.length / limit),
-      // totalRecords: data?.records?.length,
+      totalPages,
+      totalRecords,
+      offset: returnedOffset,
     },
   });
 });

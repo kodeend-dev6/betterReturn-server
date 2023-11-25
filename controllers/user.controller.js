@@ -26,6 +26,7 @@ const getAllUser = async (req, res) => {
   }
 };
 
+
 // Get Single
 const getSingleUser = catchAsync(async (req, res) => {
   const { email } = req.user;
