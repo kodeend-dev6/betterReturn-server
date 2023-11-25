@@ -9,7 +9,7 @@ const apiKey = config.key.apiKey;
 
 const searchGame = catchAsync(async (req, res) => {
   const { search, game } = req.query;
-  const page =  1;
+  const page = 1;
   const limit = 100;
   const offset = Math.max(0, (page - 1) * limit);
 
@@ -17,15 +17,16 @@ const searchGame = catchAsync(async (req, res) => {
 
   // const apiUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}?sort%5B0%5D%5Bfield%5D=${fieldToSort}&sort%5B0%5D%5Bdirection%5D=asc`
 
-  let table = soccerTable;
-  let filter = `AND(
-    OR(
-        REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedSearch}')),
-        REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
-        REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
-    ),
-    NOT({MatchResults} = BLANK())
-)`;
+  const today = new Date(); // Get today's date
+  const previousDate = new Date();
+  previousDate.setDate(today.getDate() - 20); // Specify the number of days before today
+
+  // Convert dates to Airtable-compatible string format (YYYY-MM-DD)
+  const formattedToday = today.toISOString().split('T')[0];
+  const formattedPreviousDate = previousDate.toISOString().split('T')[0];
+
+  let filter;
+  let table;
   if (game === "csgo") {
     table = csgoTable;
     filter = `AND(OR(
@@ -33,7 +34,7 @@ const searchGame = catchAsync(async (req, res) => {
     REGEX_MATCH(LOWER({Team2}), LOWER('${escapedSearch}')),
     REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
     ),
-    NOT({Results} = BLANK()
+    NOT({Results} = BLANK())
 )`;
   } else if (game === "valorant") {
     table = valorantTable;
@@ -44,6 +45,19 @@ const searchGame = catchAsync(async (req, res) => {
     ),
     NOT({Result} = BLANK())
 )`;
+  } else {
+    table = soccerTable;
+     filter = `AND(
+      OR(
+          REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedSearch}')),
+          REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedSearch}')),
+          REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
+      ),
+      NOT({MatchResults} = BLANK()),
+      {Date} >= '${formattedPreviousDate}',
+      {Date} <= '${formattedToday}',
+      {upload}=1
+  )`
   }
 
   const { data: { records, offset: returnedOffset, totalRecords } } = await axios.get(table, {
@@ -52,25 +66,16 @@ const searchGame = catchAsync(async (req, res) => {
       filterByFormula: filter,
       pageSize: limit,
       offset,
+      // sort: [{ field: 'Date', direction: 'desc' }]
     },
   });
 
-
-
-  const totalPages = Math.ceil(totalRecords / limit);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "Search Successful",
-    data: records,
-    meta: {
-      page,
-      limit,
-      totalPages,
-      totalRecords,
-      offset: returnedOffset,
-    },
+    data: records
   });
 });
 
