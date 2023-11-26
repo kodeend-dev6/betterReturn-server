@@ -60,6 +60,8 @@ const createSubscription = catchAsync(async (req, res, next) => {
 
   const user = findUser(email, { throwError: true });
 
+  console.log(user);
+
   // if there is existing subscription, cancel it
   if (user?.fields?.Subscription_id) {
     await stripe.subscriptions.cancel(user?.fields?.Subscription_id);
@@ -94,17 +96,30 @@ const createSubscription = catchAsync(async (req, res, next) => {
   });
 });
 
+// Cancel a subscription
+const cancelSubscription = catchAsync(async (req, res, next) => {
+  const { subscriptionId } = req.body;
+
+  const deletedSubscription = await stripe.subscriptions.cancel(subscriptionId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    data: { deletedSubscription },
+  });
+});
+
 // Stripe Webhook
 const stripeWebhook = catchAsync(async (req, res, next) => {
   const webhookSecret = "whsec_w0KoUWOPhgDDIw8HZCYGyewapM3adr1Z";
-  const sig = request.headers[webhookSecret];
+  const sig = req.headers[webhookSecret];
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(request.body, sig, webhookSecret);
+    event = await stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
-    response.status(400).send(`Webhook Error: ${err.message}`);
+    res.status(400).send(`Webhook Error: ${err.message}`);
     return;
   }
 
@@ -150,5 +165,6 @@ const stripeWebhook = catchAsync(async (req, res, next) => {
 module.exports = {
   paymentCheckout,
   createSubscription,
+  cancelSubscription,
   stripeWebhook,
 };

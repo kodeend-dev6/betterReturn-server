@@ -7,7 +7,7 @@ const { findUser } = require("../user.helper");
 const fetcher = require("../../utils/fetcher/airTableFetcher");
 const userTable = config.db.userTableUrl;
 
-const createSubscriptionToDB = async (stripeData) => {
+const createSubscriptionToDB = async(stripeData) => {
   try {
     const { id, customer, customer_email } = stripeData;
 
