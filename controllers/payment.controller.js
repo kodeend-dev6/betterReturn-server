@@ -75,7 +75,7 @@ const createSubscription = catchAsync(async (req, res, next) => {
       save_default_payment_method: "on_subscription",
       payment_method_options: {
         card: {
-          rerequest_three_d_secure: "any",
+          request_three_d_secure: "any",
         },
       },
     },
