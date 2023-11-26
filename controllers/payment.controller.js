@@ -5,7 +5,7 @@ const sendResponse = require("../utils/sendResponse");
 const createSubscriptionToDB = require("../helper/subscription/createSubscriptionToDB");
 const endpointSecret =
   "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
-  const webhookSecret = "whsec_KDAhJ4bICReDwZhGoXvDK8o2ysN2H1qm"
+const webhookSecret = "whsec_KDAhJ4bICReDwZhGoXvDK8o2ysN2H1qm";
 
 const paymentCheckout = catchAsync(async (req, res) => {
   const session = await stripe.checkout.sessions.create({
@@ -61,7 +61,7 @@ const createSubscription = catchAsync(async (req, res, next) => {
     });
   }
 
-  const user = findUser(email, { throwError: true });
+  const user = await findUser(email, { throwError: true });
 
   console.log(user);
 
@@ -119,7 +119,7 @@ const stripeWebhook = async (req, res, next) => {
   let event;
 
   try {
-    event =  stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
@@ -141,6 +141,7 @@ const stripeWebhook = async (req, res, next) => {
       break;
     case "subscription_schedule.created":
       const subscriptionScheduleCreated = event.data.object;
+      console.log(subscriptionScheduleCreated);
       await createSubscriptionToDB(subscriptionScheduleCreated);
       break;
     case "subscription_schedule.expiring":
