@@ -82,8 +82,6 @@ const createSubscription = catchAsync(async (req, res, next) => {
     expand: ["latest_invoice.payment_intent"],
   });
 
-  console.log(subscription?.latest_invoice);
-
   sendResponse(res, {
     statusCode: 200,
     success: true,

@@ -7,7 +7,7 @@ const { findUser } = require("../user.helper");
 const fetcher = require("../../utils/fetcher/airTableFetcher");
 const userTable = config.db.userTableUrl;
 
-const createSubscriptionToDB = catchAsync(async (stripeData) => {
+const createSubscriptionToDB = async (stripeData) => {
   try {
     const { id, customer, customer_email } = stripeData;
 
@@ -37,11 +37,13 @@ const createSubscriptionToDB = catchAsync(async (stripeData) => {
     const data = { fields: newData };
     const response = await fetcher.patch(airtableURL, data);
 
+    console.log(response, moment.unix(invoice?.subscription?.period_end));
+
     return response;
   } catch (error) {
     console.log(error?.response?.data?.error);
   }
-});
+};
 
 module.exports = createSubscriptionToDB;
 
