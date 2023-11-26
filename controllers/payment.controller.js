@@ -3,9 +3,6 @@ const { findUser } = require("../helper/user.helper");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
 const createSubscriptionToDB = require("../helper/subscription/createSubscriptionToDB");
-const endpointSecret =
-  "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
-const webhookSecret = "whsec_KDAhJ4bICReDwZhGoXvDK8o2ysN2H1qm";
 
 const paymentCheckout = catchAsync(async (req, res) => {
   const session = await stripe.checkout.sessions.create({
@@ -63,8 +60,6 @@ const createSubscription = catchAsync(async (req, res, next) => {
 
   const user = await findUser(email, { throwError: true });
 
-  console.log(user);
-
   // if there is existing subscription, cancel it
   if (user?.fields?.Subscription_id) {
     await stripe.subscriptions.cancel(user?.fields?.Subscription_id);
@@ -80,7 +75,7 @@ const createSubscription = catchAsync(async (req, res, next) => {
       save_default_payment_method: "on_subscription",
       payment_method_options: {
         card: {
-          request_three_d_secure: "any",
+          rerequest_three_d_secure: "any",
         },
       },
     },
@@ -113,15 +108,17 @@ const cancelSubscription = catchAsync(async (req, res, next) => {
 });
 
 // Stripe Webhook
-const stripeWebhook = async (req, res, next) => {
-  const sig = req.headers["stripe-signature"];
+const stripeWebhook = async (request, response) => {
+  const webhookSecret = "whsec_A9QqO7qW3XSYvg7GzEBXvWjsP4cl5OKV";
+
+  const sig = request.headers["stripe-signature"];
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    event = stripe.webhooks.constructEvent(request.body, sig, webhookSecret);
   } catch (err) {
-    res.status(400).send(`Webhook Error: ${err.message}`);
+    response.status(400).send(`Webhook Error: ${err.message}`);
     return;
   }
 
@@ -146,7 +143,7 @@ const stripeWebhook = async (req, res, next) => {
   console.log(event.type, event.data.object);
 
   // Return a 200 response to acknowledge receipt of the event
-  res.status(200).send({
+  response.status(200).send({
     received: true,
   });
 };
