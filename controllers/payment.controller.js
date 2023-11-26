@@ -114,12 +114,12 @@ const cancelSubscription = catchAsync(async (req, res, next) => {
 
 // Stripe Webhook
 const stripeWebhook = async (req, res, next) => {
-  const sig = req.headers[webhookSecret];
+  const sig = req.headers["stripe-signature"];
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
@@ -127,10 +127,6 @@ const stripeWebhook = async (req, res, next) => {
 
   // Handle the event
   switch (event.type) {
-    case "subscription_schedule.aborted":
-      const subscriptionScheduleAborted = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.aborted
-      break;
     case "subscription_schedule.canceled":
       const subscriptionScheduleCanceled = event.data.object;
       // Then define and call a function to handle the event subscription_schedule.canceled
@@ -141,28 +137,18 @@ const stripeWebhook = async (req, res, next) => {
       break;
     case "subscription_schedule.created":
       const subscriptionScheduleCreated = event.data.object;
-      console.log(subscriptionScheduleCreated);
       await createSubscriptionToDB(subscriptionScheduleCreated);
       break;
-    case "subscription_schedule.expiring":
-      const subscriptionScheduleExpiring = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.expiring
-      break;
-    case "subscription_schedule.released":
-      const subscriptionScheduleReleased = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.released
-      break;
-    case "subscription_schedule.updated":
-      const subscriptionScheduleUpdated = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.updated
-      break;
-    // ... handle other event types
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
 
+  console.log(event.type, event.data.object);
+
   // Return a 200 response to acknowledge receipt of the event
-  res.send();
+  res.status(200).send({
+    received: true,
+  });
 };
 
 module.exports = {
