@@ -34,7 +34,6 @@ const paymentCheckout = catchAsync(async (req, res) => {
 // Create a new subscription
 const createSubscription = catchAsync(async (req, res, next) => {
   const { name, email, planId, paymentMethod } = req.body;
-  console.log(req.body);
 
   let customer;
   // Check if customer already exists in Stripe
@@ -89,7 +88,6 @@ const createSubscription = catchAsync(async (req, res, next) => {
 
 // Stripe Webhook
 const stripeWebhook = catchAsync(async (req, res, next) => {
-  const webhookId = "we_1OGItxCBxfPNT5xifF1nkJt1";
   const webhookSecret = "whsec_w0KoUWOPhgDDIw8HZCYGyewapM3adr1Z";
   const sig = request.headers[webhookSecret];
 
@@ -118,8 +116,7 @@ const stripeWebhook = catchAsync(async (req, res, next) => {
       break;
     case "subscription_schedule.created":
       const subscriptionScheduleCreated = event.data.object;
-      console.log(subscriptionScheduleCreated);
-      // Then define and call a function to handle the event subscription_schedule.created
+      await createSubscription(subscriptionScheduleCreated);
       break;
     case "subscription_schedule.expiring":
       const subscriptionScheduleExpiring = event.data.object;
