@@ -3,6 +3,9 @@ const { findUser } = require("../helper/user.helper");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
 const createSubscriptionToDB = require("../helper/subscription/createSubscriptionToDB");
+const endpointSecret =
+  "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
+  const webhookSecret = "whsec_KDAhJ4bICReDwZhGoXvDK8o2ysN2H1qm"
 
 const paymentCheckout = catchAsync(async (req, res) => {
   const session = await stripe.checkout.sessions.create({
@@ -110,14 +113,13 @@ const cancelSubscription = catchAsync(async (req, res, next) => {
 });
 
 // Stripe Webhook
-const stripeWebhook = catchAsync(async (req, res, next) => {
-  const webhookSecret = "whsec_w0KoUWOPhgDDIw8HZCYGyewapM3adr1Z";
+const stripeWebhook = async (req, res, next) => {
   const sig = req.headers[webhookSecret];
 
   let event;
 
   try {
-    event = await stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    event =  stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;
@@ -160,7 +162,7 @@ const stripeWebhook = catchAsync(async (req, res, next) => {
 
   // Return a 200 response to acknowledge receipt of the event
   res.send();
-});
+};
 
 module.exports = {
   paymentCheckout,

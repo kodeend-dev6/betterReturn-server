@@ -1,5 +1,4 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const catchAsync = require("../../utils/errors/catchAsync");
 const moment = require("moment");
 const stripePLans = require("../../utils/stripe/stripePlans");
 const config = require("../../config/config");
