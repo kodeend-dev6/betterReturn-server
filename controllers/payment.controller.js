@@ -1,6 +1,8 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { findUser } = require("../helper/user.helper");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
+const createSubscriptionToDB = require("../helper/subscription/createSubscriptionToDB");
 
 const paymentCheckout = catchAsync(async (req, res) => {
   const session = await stripe.checkout.sessions.create({
@@ -55,11 +57,19 @@ const createSubscription = catchAsync(async (req, res, next) => {
       },
     });
   }
+
+  const user = findUser(email, { throwError: true });
+
+  // if there is existing subscription, cancel it
+  if (user?.fields?.Subscription_id) {
+    await stripe.subscriptions.cancel(user?.fields?.Subscription_id);
+  }
+
   // Create new subscription for customer
   const subscription = await stripe.subscriptions.create({
     customer: customer.id,
     items: [{ price: planId }],
-    trial_period_days: 7,
+    trial_period_days: user?.fields?.FreeTier ? undefined : 7,
     payment_settings: {
       payment_method_types: ["card"],
       save_default_payment_method: "on_subscription",
@@ -116,7 +126,7 @@ const stripeWebhook = catchAsync(async (req, res, next) => {
       break;
     case "subscription_schedule.created":
       const subscriptionScheduleCreated = event.data.object;
-      await createSubscription(subscriptionScheduleCreated);
+      await createSubscriptionToDB(subscriptionScheduleCreated);
       break;
     case "subscription_schedule.expiring":
       const subscriptionScheduleExpiring = event.data.object;
@@ -136,7 +146,7 @@ const stripeWebhook = catchAsync(async (req, res, next) => {
   }
 
   // Return a 200 response to acknowledge receipt of the event
-  response.send();
+  res.send();
 });
 
 module.exports = {
