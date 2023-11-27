@@ -14,13 +14,17 @@ const userRouter = require("./routes/user.route");
 const testRouter = require("./routes/test.route");
 const searchRouter = require("./routes/search.route");
 const paymentRouter = require("./routes/payment.route");
-const PickOfTheDayRouter = require('./routes/pickOfDay.route');
+const PickOfTheDayRouter = require("./routes/pickOfDay.route");
 
 const passport = require("passport");
 const expressSession = require("express-session");
 const passportGoogle = require("./helper/passportGoogle");
+const stripeWebhook = require("./utils/stripe/stripeWebhook");
 
 const app = express();
+
+// Stripe Webhook
+app.post("/stripe/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 
 //middlewares
 app.use(cors());
@@ -52,12 +56,11 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/test", testRouter);
 app.use("/api/search", searchRouter);
-app.use("/api/payment", paymentRouter)
-app.use("/api/pick-of-the-day", PickOfTheDayRouter)
+app.use("/api/payment", paymentRouter);
+app.use("/api/pick-of-the-day", PickOfTheDayRouter);
 
 // Global Error Handler
 app.use(globalErrorHandler);
-
 
 // 404 Error handler
 app.all("*", (req, res) => {

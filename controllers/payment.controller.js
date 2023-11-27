@@ -108,49 +108,51 @@ const cancelSubscription = catchAsync(async (req, res, next) => {
 });
 
 // Stripe Webhook
-const stripeWebhook = async (request, response) => {
-  const webhookSecret = "whsec_A9QqO7qW3XSYvg7GzEBXvWjsP4cl5OKV";
+// const stripeWebhook = async (request, response) => {
+//   const webhookSecret = "whsec_A9QqO7qW3XSYvg7GzEBXvWjsP4cl5OKV";
 
-  const sig = request.headers["stripe-signature"];
+//   const sig = request.headers["stripe-signature"];
 
-  let event;
+//   let event;
 
-  try {
-    event = stripe.webhooks.constructEvent(request.rawBody, sig, webhookSecret);
-  } catch (err) {
-    response.status(400).send(`Webhook Error: ${err.message}`);
-    return;
-  }
+//   try {
+//     event = stripe.webhooks.constructEvent(request.body, sig, webhookSecret);
+//   } catch (err) {
+//     response.status(400).send(`Webhook Error: ${err.message}`);
+//     return;
+//   }
 
-  // Handle the event
-  switch (event.type) {
-    case "subscription_schedule.canceled":
-      const subscriptionScheduleCanceled = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.canceled
-      break;
-    case "subscription_schedule.completed":
-      const subscriptionScheduleCompleted = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.completed
-      break;
-    case "subscription_schedule.created":
-      const subscriptionScheduleCreated = event.data.object;
-      await createSubscriptionToDB(subscriptionScheduleCreated);
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
+//   // Handle the event
+//   switch (event.type) {
+//     case "subscription_schedule.canceled":
+//       const subscriptionScheduleCanceled = event.data.object;
+//       // Then define and call a function to handle the event subscription_schedule.canceled
+//       break;
+//     case "subscription_schedule.completed":
+//       const subscriptionScheduleCompleted = event.data.object;
+//       // Then define and call a function to handle the event subscription_schedule.completed
+//       break;
+//     case "subscription_schedule.created":
+//       const subscriptionScheduleCreated = event.data.object;
+//       await createSubscriptionToDB(subscriptionScheduleCreated);
+//       break;
+//     default:
+//       console.log(`Unhandled event type ${event.type}`);
+//   }
 
-  console.log(event.type, event.data.object);
+//   console.log(event.type, event.data.object);
 
-  // Return a 200 response to acknowledge receipt of the event
-  response.status(200).send({
-    received: true,
-  });
-};
+//   // Return a 200 response to acknowledge receipt of the event
+//   response.status(200).send({
+//     received: true,
+//   });
+// };
+
+
 
 module.exports = {
   paymentCheckout,
   createSubscription,
   cancelSubscription,
-  stripeWebhook,
+  // stripeWebhook,
 };
