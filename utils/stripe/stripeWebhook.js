@@ -4,9 +4,11 @@ const sendResponse = require("../sendResponse");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const stripeWebhook = catchAsync(async (request, response) => {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret =
+    process.env.STRIPE_WEBHOOK_SECRET ||
+    "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
   // const webhookSecret =
-    // "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
+  // "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
 
   const sig = request.headers["stripe-signature"];
 
@@ -21,17 +23,15 @@ const stripeWebhook = catchAsync(async (request, response) => {
 
   // Handle the event
   switch (event.type) {
-    case "subscription_schedule.canceled":
-      const subscriptionScheduleCanceled = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.canceled
-      break;
-    case "subscription_schedule.completed":
-      const subscriptionScheduleCompleted = event.data.object;
-      // Then define and call a function to handle the event subscription_schedule.completed
-      break;
     case "subscription_schedule.created":
       const subscriptionScheduleCreated = event.data.object;
-      await createSubscriptionToDB(subscriptionScheduleCreated);
+      break;
+    case "customer.subscription.created":
+      const subscription = await stripe.subscriptions.retrieve(
+        event.data.object.id,
+        { expand: ["customer"] }
+      );
+      await createSubscriptionToDB(subscription);
       break;
     default:
       console.log(`Unhandled event type ${event.type}`);
