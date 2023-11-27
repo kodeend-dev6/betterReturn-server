@@ -18,6 +18,8 @@ const createSubscriptionToDB = async (stripeData) => {
       (plan) => plan.id === subscription?.plan?.id
     ).name;
 
+    console.log(subscription);
+
     const newData = {
       Trial_ends_at: moment.unix(subscription.trial_end) || undefined,
       Plan_start_date: moment.unix(subscription.current_period_start),
