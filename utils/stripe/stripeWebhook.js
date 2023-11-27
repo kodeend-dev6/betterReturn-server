@@ -1,12 +1,12 @@
 const createSubscriptionToDB = require("../../helper/subscription/createSubscriptionToDB");
+const catchAsync = require("../errors/catchAsync");
 const sendResponse = require("../sendResponse");
-
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-const stripeWebhook = async (request, response) => {
+const stripeWebhook = catchAsync(async (request, response) => {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  //   const webhookSecret =
-  //     "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
+  // const webhookSecret =
+    // "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
 
   const sig = request.headers["stripe-signature"];
 
@@ -32,7 +32,6 @@ const stripeWebhook = async (request, response) => {
     case "subscription_schedule.created":
       const subscriptionScheduleCreated = event.data.object;
       await createSubscriptionToDB(subscriptionScheduleCreated);
-      console.log(subscriptionScheduleCreated);
       break;
     default:
       console.log(`Unhandled event type ${event.type}`);
@@ -44,6 +43,6 @@ const stripeWebhook = async (request, response) => {
     success: true,
     message: "Webhook received",
   });
-};
+});
 
 module.exports = stripeWebhook;

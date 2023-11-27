@@ -6,37 +6,37 @@ const { findUser } = require("../user.helper");
 const fetcher = require("../../utils/fetcher/airTableFetcher");
 const userTable = config.db.userTableUrl;
 
-const createSubscriptionToDB = async(stripeData) => {
+const createSubscriptionToDB = async (stripeData) => {
   try {
-    const { id, customer, customer_email } = stripeData;
+    const { subscription: subscriptionId } = stripeData;
 
-    const invoice = await stripe.invoices.retrieve(id, {
-      expand: ["subscription"],
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ["customer"],
     });
 
     const Plan_name = stripePLans.find(
-      (plan) => plan.id === invoice?.subscription?.plan?.id
+      (plan) => plan.id === subscription?.plan?.id
     ).name;
 
     const newData = {
-      Trial_ends_at: moment.unix(invoice.subscription.trial_end) || undefined,
-      Plan_start_date: moment.unix(invoice.subscription.current_period_start),
-      Plan_end_date: moment.unix(invoice.subscription.current_period_end),
+      Trial_ends_at: moment.unix(subscription.trial_end) || undefined,
+      Plan_start_date: moment.unix(subscription.current_period_start),
+      Plan_end_date: moment.unix(subscription.current_period_end),
       FreeTier: true,
       Plan_name: Plan_name,
-      Stripe_id: customer,
-      Subscription_id: invoice.subscription.id,
+      Stripe_id: subscription?.customer?.id,
+      Subscription_id: subscription.id,
     };
 
-    const user = await findUser(customer_email, { throwError: true });
+    const user = await findUser(subscription?.customer?.email, {
+      throwError: true,
+    });
 
     // Update to airtable
     const airtableURL = `${userTable}/${user?.id}`;
 
     const data = { fields: newData };
     const response = await fetcher.patch(airtableURL, data);
-
-    console.log(response, moment.unix(invoice?.subscription?.period_end));
 
     return response;
   } catch (error) {
