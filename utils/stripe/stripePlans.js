@@ -17,6 +17,18 @@ const stripePLans = [
     price: 59,
     type: "monthly",
   },
+  {
+    id: "price_1OGy1zCBxfPNT5xiUtJBXug6",
+    name: "Pro",
+    price: 210,
+    type: "semiannually"
+  },
+  {
+    id: "price_1OGy69CBxfPNT5xirMWbqalC",
+    name: "Pro Plus",
+    price: 318,
+    type: "semiannually"
+  }
 ];
 
 module.exports = stripePLans;
