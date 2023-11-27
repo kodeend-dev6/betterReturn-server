@@ -21,13 +21,13 @@ const stripePLans = [
     id: "price_1OGy1zCBxfPNT5xiUtJBXug6",
     name: "Pro",
     price: 210,
-    type: "semiannually"
+    type: "semiAnnual"
   },
   {
     id: "price_1OGy69CBxfPNT5xirMWbqalC",
     name: "Pro Plus",
     price: 318,
-    type: "semiannually"
+    type: "semiAnnual"
   }
 ];
 
