@@ -17,6 +17,7 @@ const {
 const sendNodeEmail = require("../helper/email/sendNodeEmail");
 const emailVerificationTemplate = require("../helper/email/emailVerificationTemplate");
 const forgotPasswordTemplate = require("../helper/email/forgotPasswordTemplate");
+const fetcher = require("../utils/fetcher/airTableFetcher");
 
 // User Registration
 const createNewUser = catchAsync(async (req, res) => {
@@ -87,7 +88,17 @@ const createNewUser = catchAsync(async (req, res) => {
 
 // User Login
 const userLogin = catchAsync(async (req, res, next) => {
-  const { isAuthenticated, data } = await authenticateUser(req.body);
+  const { isAuthenticated, data, isExisting } = await authenticateUser(
+    req.body
+  );
+
+  if (isExisting) {
+    return res.status(200).json({
+      message:
+        "You are an existing user. Please reset your password to continue.",
+      isExistingUser: true,
+    });
+  }
 
   if (!isAuthenticated) {
     throw new ApiError(401, "Email or Password mismatched!");
@@ -123,6 +134,17 @@ const userLogin = catchAsync(async (req, res, next) => {
     }
   }
 
+  // Increment the Logins_count field
+  try {
+    await fetcher.patch(`${userTable}/${data?.id}`, {
+      fields: {
+        Logins_count: data?.fields?.Logins_count + 1,
+      },
+    });
+  } catch (error) {
+    console.log(error?.response?.data);
+  }
+
   const accessToken = getToken({
     id: data?.id,
     email: data?.fields?.Email,
@@ -156,7 +178,7 @@ const verifyEmail = catchAsync(async (req, res) => {
       fields: {
         OTP: "",
         OTPExpires: "",
-        Email_verified_at: String(Date.now()),
+        Email_verified_at: new Date().toISOString(),
       },
     },
   };
@@ -235,6 +257,10 @@ const verifyForgotPasswordOTP = catchAsync(async (req, res) => {
       fields: {
         OTP: "",
         OTPExpires: "",
+        Email_verified_at: user?.fields?.Email_verified_at
+          ? ""
+          : new Date().toISOString(),
+        IsExisting: false,
       },
     },
   };

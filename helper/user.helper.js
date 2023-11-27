@@ -12,6 +12,10 @@ const authenticateUser = async ({ email, password }) => {
   }
   const user = await findUser(email, { throwError: true });
 
+  if (user?.fields?.IsExisting) {
+    return { isAuthenticated: false, data: user, isExisting: true };
+  }
+
   if (user?.fields?.Email && !user?.fields?.Password) {
     throw new ApiError(400, "Please login with social account.");
   }
@@ -20,7 +24,7 @@ const authenticateUser = async ({ email, password }) => {
   if (bcrypt.compareSync(password, user?.fields?.Password)) {
     return { isAuthenticated: true, data: user };
   } else {
-    return { isAuthenticated: false, data: null };
+    return { isAuthenticated: false, data: null, isExisting };
   }
 };
 
