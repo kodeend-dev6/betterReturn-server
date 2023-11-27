@@ -40,6 +40,9 @@ const createNewUser = catchAsync(async (req, res) => {
 
   const hashedPassword = bcrypt.hashSync(Password, 10);
 
+  fields.Created_at = new Date().toISOString();
+  fields.Role = "user";
+  fields.Logins_count = 0;
   fields.Password = hashedPassword;
   const { otp, hashedOTP, otpExpires } = generateOTP();
   fields.OTP = hashedOTP;
