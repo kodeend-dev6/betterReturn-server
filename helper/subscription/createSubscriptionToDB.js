@@ -34,13 +34,7 @@ const createSubscriptionToDB = async (subscription) => {
 
     const data = { fields: newData };
 
-    const response = await axios.patch(airtableURL, data, {
-      headers: {
-        Authorization: `Bearer ${config.key.apiKey}`,
-      },
-    });
-
-    console.log(user, response?.data);
+    const response = await fetcher.patch(airtableURL, data);
 
     return response.data;
   } catch (error) {
