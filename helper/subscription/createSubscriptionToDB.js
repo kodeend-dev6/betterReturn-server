@@ -7,9 +7,7 @@ const userTable = config.db.userTableUrl;
 
 const createSubscriptionToDB = async (subscription) => {
   try {
-    const Plan_name = stripePLans.find(
-      (plan) => plan.id === subscription?.plan?.id
-    ).name;
+    const plan = stripePLans.find((plan) => plan.id === subscription?.plan?.id);
 
     const newData = {
       Trial_ends_at: subscription?.trial_end
@@ -22,9 +20,9 @@ const createSubscriptionToDB = async (subscription) => {
         ? moment.unix(subscription.current_period_end)
         : "",
       FreeTier: true,
-      Plan_name: Plan_name || "",
+      Plan_name: plan?.name || "",
       Stripe_id: subscription?.customer?.id || "",
-      Subscription_id: subscription.id || "",
+      Subscription_id: subscription?.id || "",
     };
 
     const user = await findUser(subscription?.customer?.email, {
@@ -35,9 +33,16 @@ const createSubscriptionToDB = async (subscription) => {
     const airtableURL = `${userTable}/${user?.id}`;
 
     const data = { fields: newData };
-    const response = await fetcher.patch(airtableURL, data);
 
-    return response;
+    const response = await axios.patch(airtableURL, data, {
+      headers: {
+        Authorization: `Bearer ${config.key.apiKey}`,
+      },
+    });
+
+    console.log(user, response?.data);
+
+    return response.data;
   } catch (error) {
     console.log(error?.response?.data?.error);
   }
