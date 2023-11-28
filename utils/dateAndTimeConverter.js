@@ -83,6 +83,7 @@ const convertedFromDB = async (allData, desiredTimeZone, desiredDate) => {
 
     convertedData.push(item);
   }
+  return convertedData
 };
 
 const convertedFromDBCSGO = async (allData, desiredTimeZone, desiredDate) => {
