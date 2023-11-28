@@ -7,7 +7,8 @@ const {
   buyPlan,
   updateUserInfo,
   getSingleUser,
-  insertOldUser
+  // insertOldUser,
+  // updateOldUser,
 } = require("../controllers/user.controller");
 const upload = require("../utils/upload");
 
@@ -17,6 +18,7 @@ router.put("/update", upload.single("Image"), updateUserInfo);
 router.put("/plan/:userID", buyPlan);
 
 // insert old user
-router.post("/insert-old", insertOldUser);
+// router.post("/insert-old", insertOldUser);
+// router.post("/update-old", updateOldUser);
 
 module.exports = router;

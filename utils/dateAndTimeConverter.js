@@ -47,21 +47,42 @@ const convertedFromDBValorant = async (
   return convertedData;
 };
 
-const convertedFromDB = async (allData, desiredTimeZone) => {
-  const item = await allData.map(item => {
-    // Convert date and time
+const convertedFromDB = async (allData, desiredTimeZone, desiredDate) => {
+  // const item = await allData.map(item => {
+  //   // Convert date and time
+  //   if (item.fields.Date && item.fields.Time) {
+  //     const swedenDateTime = `${item.fields.Date} ${item.fields.Time}`;
+  //     const convertedDateTime = moment2.tz(swedenDateTime, 'YYYY-MM-DD h:mm A', 'Europe/Stockholm').tz(desiredTimeZone);
+
+  //     item.fields.Date = convertedDateTime.format('YYYY-MM-DD'); // Update the date field
+  //     item.fields.Time = convertedDateTime.format('HH:mm'); // Update the time field
+  //   }
+
+  //   return item;
+  // });
+  // return item
+
+  const convertedData = [];
+  for (const item of allData) {
     if (item.fields.Date && item.fields.Time) {
       const swedenDateTime = `${item.fields.Date} ${item.fields.Time}`;
-      const convertedDateTime = moment2.tz(swedenDateTime, 'YYYY-MM-DD h:mm A', 'Europe/Stockholm').tz(desiredTimeZone);
+      const convertedDateTime = moment2
+        .tz(swedenDateTime, "YYYY-MM-DD h:mm A", "Europe/Stockholm")
+        .tz(desiredTimeZone);
 
-      item.fields.Date = convertedDateTime.format('YYYY-MM-DD'); // Update the date field
-      item.fields.Time = convertedDateTime.format('HH:mm'); // Update the time field
+      if (
+        desiredDate &&
+        convertedDateTime.format("YYYY-MM-DD") !== desiredDate
+      ) {
+        continue;
+      }
+
+      item.fields.Date = convertedDateTime.format("YYYY-MM-DD"); // Update the date field
+      item.fields.Time = convertedDateTime.format("HH:mm"); // Update the time field
     }
 
-    return item;
-  });
-
-  return item
+    convertedData.push(item);
+  }
 };
 
 const convertedFromDBCSGO = async (allData, desiredTimeZone, desiredDate) => {
