@@ -13,7 +13,7 @@ const stripePLans = [
   },
   {
     id: "price_1OGDxvCBxfPNT5xifPrN154T",
-    name: "Pro+",
+    name: "Proplus",
     price: 59,
     type: "monthly",
   },
@@ -25,7 +25,7 @@ const stripePLans = [
   },
   {
     id: "price_1OGy69CBxfPNT5xirMWbqalC",
-    name: "Pro+",
+    name: "Proplus",
     price: 318,
     type: "semiAnnual"
   }
