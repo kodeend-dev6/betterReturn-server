@@ -96,13 +96,29 @@ const createSubscription = catchAsync(async (req, res, next) => {
 
 // Cancel a subscription
 const cancelSubscription = catchAsync(async (req, res, next) => {
-  const { subscriptionId } = req.body;
+  const { subscriptionId, email } = req.body;
 
   const deletedSubscription = await stripe.subscriptions.cancel(subscriptionId);
+
+  // Update to airtable
+  const user = await findUser(email, { throwError: true });
+  const airtableURL = `${userTable}/${user?.id}`;
+  const data = {
+    fields: {
+      Subscription_id: "",
+      Plan_name: "",
+      Plan_start_date: "",
+      Plan_end_date: "",
+      Trial_ends_at: "",
+    },
+  };
+
+  const response = await fetcher.patch(airtableURL, data);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
+    message: "Subscription canceled successfully",
     data: { deletedSubscription },
   });
 });
@@ -147,8 +163,6 @@ const cancelSubscription = catchAsync(async (req, res, next) => {
 //     received: true,
 //   });
 // };
-
-
 
 module.exports = {
   paymentCheckout,
