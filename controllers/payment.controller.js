@@ -1,8 +1,11 @@
+/* eslint-disable no-undef */
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { findUser } = require("../helper/user.helper");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
-const createSubscriptionToDB = require("../helper/subscription/createSubscriptionToDB");
+const config = require("../config/config");
+const fetcher = require("../utils/fetcher/airTableFetcher");
+const userTable = config.db.userTableUrl;
 
 const paymentCheckout = catchAsync(async (req, res) => {
   const session = await stripe.checkout.sessions.create({
@@ -34,7 +37,7 @@ const paymentCheckout = catchAsync(async (req, res) => {
 });
 
 // Create a new subscription
-const createSubscription = catchAsync(async (req, res, next) => {
+const createSubscription = catchAsync(async (req, res) => {
   const { name, email, planId, paymentMethod } = req.body;
 
   let customer;
@@ -95,7 +98,7 @@ const createSubscription = catchAsync(async (req, res, next) => {
 });
 
 // Cancel a subscription
-const cancelSubscription = catchAsync(async (req, res, next) => {
+const cancelSubscription = catchAsync(async (req, res) => {
   const { subscriptionId, email } = req.body;
 
   const deletedSubscription = await stripe.subscriptions.cancel(subscriptionId);
@@ -113,7 +116,7 @@ const cancelSubscription = catchAsync(async (req, res, next) => {
     },
   };
 
-  const response = await fetcher.patch(airtableURL, data);
+  await fetcher.patch(airtableURL, data);
 
   sendResponse(res, {
     statusCode: 200,
