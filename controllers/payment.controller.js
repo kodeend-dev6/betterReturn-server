@@ -1,8 +1,11 @@
+/* eslint-disable no-undef */
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { findUser } = require("../helper/user.helper");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
-const createSubscriptionToDB = require("../helper/subscription/createSubscriptionToDB");
+const config = require("../config/config");
+const fetcher = require("../utils/fetcher/airTableFetcher");
+const userTable = config.db.userTableUrl;
 
 const paymentCheckout = catchAsync(async (req, res) => {
   const session = await stripe.checkout.sessions.create({
@@ -34,7 +37,7 @@ const paymentCheckout = catchAsync(async (req, res) => {
 });
 
 // Create a new subscription
-const createSubscription = catchAsync(async (req, res, next) => {
+const createSubscription = catchAsync(async (req, res) => {
   const { name, email, planId, paymentMethod } = req.body;
 
   let customer;
@@ -95,14 +98,30 @@ const createSubscription = catchAsync(async (req, res, next) => {
 });
 
 // Cancel a subscription
-const cancelSubscription = catchAsync(async (req, res, next) => {
-  const { subscriptionId } = req.body;
+const cancelSubscription = catchAsync(async (req, res) => {
+  const { subscriptionId, email } = req.body;
 
   const deletedSubscription = await stripe.subscriptions.cancel(subscriptionId);
+
+  // Update to airtable
+  const user = await findUser(email, { throwError: true });
+  const airtableURL = `${userTable}/${user?.id}`;
+  const data = {
+    fields: {
+      Subscription_id: "",
+      Plan_name: "",
+      Plan_start_date: "",
+      Plan_end_date: "",
+      Trial_ends_at: "",
+    },
+  };
+
+  await fetcher.patch(airtableURL, data);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
+    message: "Subscription canceled successfully",
     data: { deletedSubscription },
   });
 });
@@ -147,8 +166,6 @@ const cancelSubscription = catchAsync(async (req, res, next) => {
 //     received: true,
 //   });
 // };
-
-
 
 module.exports = {
   paymentCheckout,

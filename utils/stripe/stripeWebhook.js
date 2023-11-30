@@ -7,8 +7,6 @@ const stripeWebhook = catchAsync(async (request, response) => {
   const webhookSecret =
     process.env.STRIPE_WEBHOOK_SECRET ||
     "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
-  // const webhookSecret =
-  // "whsec_fa707738d0c6086beb392b253a5d0952317bdff7ded150739a55e6a788740929";
 
   const sig = request.headers["stripe-signature"];
 

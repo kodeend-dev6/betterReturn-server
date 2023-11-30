@@ -70,15 +70,21 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
 
     const field = "Date";
 
-    const url = `${soccerTable}?filterByFormula=AND({${field}}>='${selectedDay}', {${field}}<='${threeDaysNext}', {upload}=1)&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=asc`;
+    // const url = `${soccerTable}?filterByFormula=AND({${field}}>='${selectedDay}', {${field}}<='${threeDaysNext}', {upload}=1)&sort%5B0%5D%5Bfield%5D=${field}&sort%5B0%5D%5Bdirection%5D=asc`;
 
     const headers = {
       Authorization: `Bearer ${apiKey}`,
     };
 
-    const response = await axios.get(url, { headers });
+    const response = await axios.get(soccerTable, {
+      headers,
+      params: {
+        filterByFormula: `AND({${field}}>='${selectedDay}', {${field}}<='${threeDaysNext}', {upload}=1)`,
+        sort: [{ field: field, direction: "desc" }],
+      },
+    });
     const allData = response.data.records;
-    const convertedDatas = await convertedFromDB(allData, timeZone, value);
+    const convertedDatas = await convertedFromDB(allData, timeZone);
 
     sendResponse(res, {
       statusCode: 200,
