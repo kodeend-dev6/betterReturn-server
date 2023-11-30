@@ -15,6 +15,7 @@ const testRouter = require("./routes/test.route");
 const searchRouter = require("./routes/search.route");
 const paymentRouter = require("./routes/payment.route");
 const PickOfTheDayRouter = require("./routes/pickOfDay.route");
+const reviewRouter = require("./routes/review.route");
 
 const passport = require("passport");
 const expressSession = require("express-session");
@@ -58,6 +59,7 @@ app.use("/api/test", testRouter);
 app.use("/api/search", searchRouter);
 app.use("/api/payment", paymentRouter);
 app.use("/api/pick-of-the-day", PickOfTheDayRouter);
+app.use("/api/review", reviewRouter);
 
 // Global Error Handler
 app.use(globalErrorHandler);

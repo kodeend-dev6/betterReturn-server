@@ -112,7 +112,7 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const convertedDatas = await convertedFromDB(allData, timeZone, value);
+    const convertedDatas = await convertedFromDB(allData, timeZone, value); 
 
     sendResponse(res, {
       statusCode: 200,
