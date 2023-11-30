@@ -87,7 +87,7 @@ const createNewUser = catchAsync(async (req, res) => {
 });
 
 // User Login
-const userLogin = catchAsync(async (req, res, next) => {
+const userLogin = catchAsync(async (req, res) => {
   const { isAuthenticated, data, isExisting } = await authenticateUser(
     req.body
   );
@@ -350,7 +350,7 @@ const googleLoginCallback = catchAsync(async (req, res) => {
     delete response?.data?.fields?.OTP;
     delete response?.data?.fields?.OTPExpires;
 
-    const redirectURL = `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`;
+    const redirectURL = `${process.env.USER_SITE_URL}/google-callback?token=${accessToken}`;
     console.log(redirectURL);
     res.redirect(redirectURL);
   }
@@ -385,7 +385,7 @@ const googleLoginCallback = catchAsync(async (req, res) => {
     }
   }
 
-  const redirectURL = `${process.env.CLIENT_SITE_URL}/google-callback?token=${accessToken}`;
+  const redirectURL = `${process.env.USER_SITE_URL}/google-callback?token=${accessToken}`;
   console.log(redirectURL);
   res.redirect(redirectURL);
 });
