@@ -13,11 +13,11 @@ const {
   findUser,
   generateOTP,
   verifyOTP,
+  incrementLoginCount,
 } = require("../helper/user.helper");
 const sendNodeEmail = require("../helper/email/sendNodeEmail");
 const emailVerificationTemplate = require("../helper/email/emailVerificationTemplate");
 const forgotPasswordTemplate = require("../helper/email/forgotPasswordTemplate");
-const fetcher = require("../utils/fetcher/airTableFetcher");
 
 // User Registration
 const createNewUser = catchAsync(async (req, res) => {
@@ -43,7 +43,9 @@ const createNewUser = catchAsync(async (req, res) => {
 
   fields.Created_at = new Date().toISOString();
   fields.Role = "user";
-  fields.Logins_count = 0;
+  fields.Logins_count = 1;
+  fields.Created_at = new Date().toISOString();
+  fields.Updated_at = new Date().toISOString();
   fields.Password = hashedPassword;
   const { otp, hashedOTP, otpExpires } = generateOTP();
   fields.OTP = hashedOTP;
@@ -72,6 +74,7 @@ const createNewUser = catchAsync(async (req, res) => {
   const accessToken = getToken({
     id: response.data.id,
     email: response.data.fields.Email,
+    role: response.data.fields.Role,
   });
 
   delete response?.data?.fields?.Password;
@@ -135,19 +138,15 @@ const userLogin = catchAsync(async (req, res) => {
   }
 
   // Increment the Logins_count field
-  try {
-    await fetcher.patch(`${userTable}/${data?.id}`, {
-      fields: {
-        Logins_count: data?.fields?.Logins_count + 1,
-      },
-    });
-  } catch (error) {
-    console.log(error?.response?.data);
-  }
+  await incrementLoginCount({
+    id: data?.id,
+    prevLoginCount: data?.fields?.Logins_count,
+  });
 
   const accessToken = getToken({
     id: data?.id,
     email: data?.fields?.Email,
+    role: data?.fields?.Role,
   });
 
   delete data?.fields?.Password;
@@ -241,6 +240,7 @@ const forgotPassword = catchAsync(async (req, res) => {
   });
 });
 
+// Verify Forgot Password OTP
 const verifyForgotPasswordOTP = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
 
@@ -324,6 +324,11 @@ const googleLoginCallback = catchAsync(async (req, res) => {
   // If user doesn't exist, create a new user with google info
   if (!user) {
     const { otp, hashedOTP, otpExpires } = generateOTP();
+
+    info.Role = "user";
+    info.Logins_count = 1;
+    info.Created_at = new Date().toISOString();
+    info.Updated_at = new Date().toISOString();
     info.OTP = hashedOTP;
     info.OTPExpires = String(otpExpires);
     const data = { fields: info };
@@ -359,6 +364,7 @@ const googleLoginCallback = catchAsync(async (req, res) => {
   const accessToken = getToken({
     id: user?.id,
     email: user?.fields?.Email,
+    role: user?.fields?.Role,
   });
 
   // update the user info if google_id not found
@@ -374,6 +380,7 @@ const googleLoginCallback = catchAsync(async (req, res) => {
         fields: {
           Google_id: info?.Google_id,
           Image: info?.Image,
+          Logins_count: user?.fields?.Logins_count + 1,
         },
       },
     };
@@ -383,6 +390,11 @@ const googleLoginCallback = catchAsync(async (req, res) => {
     } catch (error) {
       console.log(error?.response?.data);
     }
+  } else {
+    await incrementLoginCount({
+      id: user?.id,
+      prevLoginCount: user?.fields?.Logins_count,
+    });
   }
 
   const redirectURL = `${process.env.USER_SITE_URL}/google-callback?token=${accessToken}`;
