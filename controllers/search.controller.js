@@ -16,12 +16,8 @@ const searchGame = catchAsync(async (req, res) => {
   const escapedSearch = search?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") || "";
 
   const today = new Date();
-  const previousDate = new Date();
-  previousDate.setDate(today.getDate() - 20);
-
-
   const formattedToday = today.toISOString().split('T')[0];
-  const formattedPreviousDate = previousDate.toISOString().split('T')[0];
+ 
 
   let filter;
   let table;
@@ -44,7 +40,6 @@ const searchGame = catchAsync(async (req, res) => {
     REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
     ),
     NOT({Result} = BLANK()),
-    {Date} >= '${formattedPreviousDate}',
     {Date} <= '${formattedToday}',
     {upload}=1
 )`;
@@ -57,7 +52,6 @@ const searchGame = catchAsync(async (req, res) => {
           REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedSearch}'))
       ),
       NOT({MatchResults} = BLANK()),
-      {Date} >= '${formattedPreviousDate}',
       {Date} <= '${formattedToday}',
       {upload}=1
   )`
@@ -69,7 +63,7 @@ const searchGame = catchAsync(async (req, res) => {
       filterByFormula: filter,
       pageSize: limit,
       offset,
-      sort: [{ field: game === "csgo" ? 'Created' : 'Date', direction: 'desc' }]
+      sort: [{ field: game === "csgo"? 'Created' : 'Date', direction: 'desc' }]
     },
   });
 
