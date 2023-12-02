@@ -10,31 +10,34 @@ const cloudinaryUpload = require("../utils/cloudinary");
 const fs = require("fs");
 const ApiError = require("../utils/errors/ApiError");
 const path = require("path");
-
-const Airtable = require("airtable");
-const base = new Airtable({
-  apiKey: config.key.apiKey,
-}).base(process.env.AIRTABLE_BASEID);
+const fetcher = require("../utils/fetcher/airTableFetcher");
 
 const getAllUser = catchAsync(async (req, res) => {
-  // const page = Number(req.query.page) || 1;
-  // const limit = Number(req.query.limit) || 5;
+  const limit = Number(req.query.limit) || 100;
+  const offset = req.query.offset || 0;
   const search = req.query.search || "";
 
-  const result = await base("User")
-    .select({
-      // pageSize: limit, maxRecords: limit, offset: (page - 1)
-      maxRecords: 100,
+  const result = await fetcher.get(`${userTable}`, {
+    params: {
+      offset,
+      limit,
+      count: true,
+      sort: [
+        {
+          field: "Created_at",
+          direction: "desc",
+        },
+      ],
       filterByFormula: `
       OR(
-        SEARCH("${search}", LOWER({name})) > 0,
-        SEARCH("${search}", LOWER({email})) > 0
+        SEARCH("${search}", LOWER({Name})) > 0,
+        SEARCH("${search}", LOWER({Email})) > 0
       )
     `,
-    })
-    .all();
+    },
+  });
 
-  const data = result?.map((record) => record?._rawJson);
+  const data = result?.data?.records;
 
   sendResponse(res, {
     success: true,
@@ -43,6 +46,8 @@ const getAllUser = catchAsync(async (req, res) => {
     data: data,
     meta: {
       total: data?.length,
+      totalPages: Math.ceil(data?.length / limit),
+      nextOffset: result?.data?.offset,
     },
   });
 });

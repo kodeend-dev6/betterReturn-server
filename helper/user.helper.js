@@ -5,6 +5,7 @@ const axios = require("axios");
 const bcrypt = require("bcrypt");
 const ApiError = require("../utils/errors/ApiError");
 const crypto = require("crypto");
+const fetcher = require("../utils/fetcher/airTableFetcher");
 
 const authenticateUser = async ({ email, password }) => {
   if (!email || !password) {
@@ -76,9 +77,22 @@ const verifyOTP = async ({ email, otp }) => {
   return user;
 };
 
+const incrementLoginCount = async ({ id, prevLoginCount }) => {
+  try {
+    await fetcher.patch(`${userTable}/${id}`, {
+      fields: {
+        Logins_count: prevLoginCount + 1,
+      },
+    });
+  } catch (error) {
+    console.log(error?.response?.data);
+  }
+};
+
 module.exports = {
   authenticateUser,
   findUser,
   generateOTP,
   verifyOTP,
+  incrementLoginCount,
 };
