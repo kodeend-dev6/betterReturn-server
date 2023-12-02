@@ -13,21 +13,15 @@ const searchGame = catchAsync(async (req, res) => {
   const limit = 100;
   const offset = Math.max(0, (page - 1) * limit);
 
-  const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedSearch = search?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") || "";
 
-  const today = new Date(); // Get today's date
+  const today = new Date();
   const previousDate = new Date();
-  previousDate.setDate(today.getDate() - 20); // Specify the number of days before today
+  previousDate.setDate(today.getDate() - 20);
 
-  // Convert dates to Airtable-compatible string format (YYYY-MM-DD)
+
   const formattedToday = today.toISOString().split('T')[0];
   const formattedPreviousDate = previousDate.toISOString().split('T')[0];
-
-  const dateComponents = formattedPreviousDate.split("-");
-  const preCsgoDate = dateComponents[2] + "-" + dateComponents[1] + "-" + dateComponents[0]
-
-  const todayDateComponents = formattedToday.split("-");
-  const todayCsgoDate = todayDateComponents[2] + "-" + todayDateComponents[1] + "-" + todayDateComponents[0]
 
   let filter;
   let table;
@@ -39,11 +33,10 @@ const searchGame = catchAsync(async (req, res) => {
     REGEX_MATCH(LOWER({Event}), LOWER('${escapedSearch}'))
     ),
     NOT({Results} = BLANK()),
-    {Date} >= '${preCsgoDate}',
-    {Date} <= '${todayCsgoDate}',
-    {upload}=1
+    {upload}=1 
 )`;
-  } else if (game === "valorant") {
+  }
+  else if (game === "valorant") {
     table = valorantTable;
     filter = `AND(OR(
     REGEX_MATCH(LOWER({Team1}), LOWER('${escapedSearch}')),
@@ -70,13 +63,13 @@ const searchGame = catchAsync(async (req, res) => {
   )`
   }
 
-  const { data: { records, offset: returnedOffset, totalRecords } } = await axios.get(table, {
+  const { data: { records } } = await axios.get(table, {
     headers: { Authorization: `Bearer ${apiKey}` },
     params: {
       filterByFormula: filter,
       pageSize: limit,
       offset,
-      sort: [{ field: 'Date', direction: 'desc' }]
+      sort: [{ field: game === "csgo" ? 'Created' : 'Date', direction: 'desc' }]
     },
   });
 
@@ -85,7 +78,10 @@ const searchGame = catchAsync(async (req, res) => {
     statusCode: 200,
     success: true,
     message: "Search Successful",
-    data: records
+    data: records,
+    meta:{
+      total: records?.length,
+    }
   });
 });
 

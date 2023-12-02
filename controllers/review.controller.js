@@ -2,7 +2,6 @@ const config = require('../config/config');
 const reviewTable = config.db.reviewTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require('axios');
-const catchAsync = require('../utils/errors/catchAsync');
 
 const createReview = async (req, res) => {
     const {name, email, rating, message} = req.body;
