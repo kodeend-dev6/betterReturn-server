@@ -9,7 +9,14 @@ const userTable = config.db.userTableUrl;
 
 // Get All Subscription Plans
 const getSubscriptionPlans = catchAsync(async (req, res) => {
-  const result = await fetcher.get(config.db.planTableUrl);
+  const result = await fetcher.get(config.db.planTableUrl, {
+    params: {
+      sort: [
+        { field: "name", direction: "asc" },
+        { field: "price", direction: "asc" },
+      ],
+    },
+  });
 
   const data = result?.data?.records;
 
