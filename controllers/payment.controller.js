@@ -7,6 +7,23 @@ const config = require("../config/config");
 const fetcher = require("../utils/fetcher/airTableFetcher");
 const userTable = config.db.userTableUrl;
 
+// Get All Subscription Plans
+const getSubscriptionPlans = catchAsync(async (req, res) => {
+  const result = await fetcher.get(config.db.planTableUrl);
+
+  const data = result?.data?.records;
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Plans retrieved successfully",
+    data,
+    meta: {
+      total: data?.length,
+    },
+  });
+});
+
 const paymentCheckout = catchAsync(async (req, res) => {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -126,50 +143,9 @@ const cancelSubscription = catchAsync(async (req, res) => {
   });
 });
 
-// Stripe Webhook
-// const stripeWebhook = async (request, response) => {
-//   const webhookSecret = "whsec_A9QqO7qW3XSYvg7GzEBXvWjsP4cl5OKV";
-
-//   const sig = request.headers["stripe-signature"];
-
-//   let event;
-
-//   try {
-//     event = stripe.webhooks.constructEvent(request.body, sig, webhookSecret);
-//   } catch (err) {
-//     response.status(400).send(`Webhook Error: ${err.message}`);
-//     return;
-//   }
-
-//   // Handle the event
-//   switch (event.type) {
-//     case "subscription_schedule.canceled":
-//       const subscriptionScheduleCanceled = event.data.object;
-//       // Then define and call a function to handle the event subscription_schedule.canceled
-//       break;
-//     case "subscription_schedule.completed":
-//       const subscriptionScheduleCompleted = event.data.object;
-//       // Then define and call a function to handle the event subscription_schedule.completed
-//       break;
-//     case "subscription_schedule.created":
-//       const subscriptionScheduleCreated = event.data.object;
-//       await createSubscriptionToDB(subscriptionScheduleCreated);
-//       break;
-//     default:
-//       console.log(`Unhandled event type ${event.type}`);
-//   }
-
-//   console.log(event.type, event.data.object);
-
-//   // Return a 200 response to acknowledge receipt of the event
-//   response.status(200).send({
-//     received: true,
-//   });
-// };
-
 module.exports = {
+  getSubscriptionPlans,
   paymentCheckout,
   createSubscription,
   cancelSubscription,
-  // stripeWebhook,
 };

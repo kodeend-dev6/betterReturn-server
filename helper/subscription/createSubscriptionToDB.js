@@ -1,5 +1,4 @@
 const moment = require("moment");
-const stripePLans = require("../../utils/stripe/stripePlans");
 const config = require("../../config/config");
 const { findUser } = require("../user.helper");
 const fetcher = require("../../utils/fetcher/airTableFetcher");
@@ -7,7 +6,12 @@ const userTable = config.db.userTableUrl;
 
 const createSubscriptionToDB = async (subscription) => {
   try {
-    const plan = stripePLans.find((plan) => plan.id === subscription?.plan?.id);
+    const result = await fetcher.get(config.db.planTableUrl);
+    const stripePLans = result?.data?.records;
+
+    const plan = stripePLans?.find(
+      (plan) => plan?.fields?.planId === subscription?.plan?.id
+    );
 
     const newData = {
       Trial_ends_at: subscription?.trial_end
