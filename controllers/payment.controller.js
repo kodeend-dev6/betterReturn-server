@@ -92,16 +92,19 @@ const createSubscription = catchAsync(async (req, res) => {
     await stripe.subscriptions.cancel(user?.fields?.Subscription_id);
   }
 
+  const trialEndDate = new Date(now.getTime() + 30 * 60 * 1000);
+
   // Create new subscription for customer
   const subscription = await stripe.subscriptions.create({
     customer: customer.id,
     items: [{ price: planId }],
     trial_period_days:
       planId === "price_1OJCVbCBxfPNT5xiYk4DIhfp"
-        ? 1
+        ? 0
         : user?.fields?.FreeTier
         ? undefined
         : 7,
+    trial_end: trialEndDate,
     payment_settings: {
       payment_method_types: ["card"],
       save_default_payment_method: "on_subscription",
