@@ -8,11 +8,11 @@ const getAllCombo = catchAsync(async (req, res) => {
   
   const result = await fetcher.get(config.db.comboTableUrl, {
     params: {
-      maxRecords: 10,
-      filterByFormula: `{Date} = ${date}`,
+      filterByFormula: `{Date} = '${date}'`,
       sort: [{ field: "Date", direction: "desc" }],
     },
   });
+  
   let data = [];
 
   for (let i = 0; i < result?.data?.records?.length; i++) {

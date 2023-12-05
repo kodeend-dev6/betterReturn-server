@@ -46,33 +46,7 @@ const getAllCsgoMatchesByDate = catchAsync(async (req, res) => {
       .subtract(2, "days")
       .format("DD-MM-YYYY");
 
-    // const [data1, data2, data3] = await Promise.all([
-    //   axios.get(csgoTable, {
-    //     headers: { Authorization: `Bearer ${apiKey}` },
-    //     params: {
-    //       filterByFormula: `AND({Date}='${date}', {upload}=1)`,
-    //     },
-    //   }),
-    //   axios.get(csgoTable, {
-    //     headers: { Authorization: `Bearer ${apiKey}` },
-    //     params: {
-    //       filterByFormula: `AND({Date}='${fristPrevious}', {upload}=1)`,
-    //     },
-    //   }),
-    //   axios.get(csgoTable, {
-    //     headers: { Authorization: `Bearer ${apiKey}` },
-    //     params: {
-    //       filterByFormula: `AND({Date}='${secondPrevious}', {upload}=1)`,
-    //     },
-    //   }),
-    // ]);
-
-    // let combinedData = [
-    //   ...data1.data.records,
-    //   ...data2.data.records,
-    //   ...data3.data.records,
-    // ];
-
+      
     const response = await axios.get(csgoTable, {
       headers: { Authorization: `Bearer ${apiKey}` },
       params: {
