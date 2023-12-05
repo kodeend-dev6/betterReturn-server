@@ -4,7 +4,6 @@ const crypto = require("crypto");
 
 const sendEmail = async ({ email, subject, properties }) => {
   const otp = crypto.randomInt(100000, 999999);
-  console.log(otp);
 
   const template_id = "Rm6bzc";
   const KLAVIYO_PRIVATE_API_KEY = "pk_3711f1c4388902ff9bdbad9371228001aa";

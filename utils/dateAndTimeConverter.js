@@ -99,7 +99,6 @@ const convertedFromDBCSGO = async (allData, desiredTimeZone, desiredDate) => {
         .tz(swedenDateTime, "YYYY-MM-DD h:mm A", "Europe/Stockholm")
         .tz(desiredTimeZone);
 
-      console.log(desiredDate, convertedDateTime.format("YYYY-MM-DD"));
 
       if (
         desiredDate &&
