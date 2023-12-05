@@ -4,10 +4,18 @@ const sendResponse = require("../utils/sendResponse");
 const config = require("../config/config");
 
 const getAllCombo = catchAsync(async (req, res) => {
-  const result = await fetcher.get(config.db.comboTableUrl, {});
+  const date = req.query.date;
+  
+  const result = await fetcher.get(config.db.comboTableUrl, {
+    params: {
+      maxRecords: 10,
+      filterByFormula: `{Date} = ${date}`,
+      sort: [{ field: "Date", direction: "desc" }],
+    },
+  });
   let data = [];
 
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < result?.data?.records?.length; i++) {
     const record = result?.data?.records[i];
     let newRecord = { ...record };
 
@@ -45,8 +53,6 @@ const getAllCombo = catchAsync(async (req, res) => {
         }
       : null;
 
-    console.log(match1, match2, match3);
-
     if (match1) {
       const match1Data = await fetcher.get(`${match1?.tableUrl}`, {
         params: {
@@ -58,7 +64,7 @@ const getAllCombo = catchAsync(async (req, res) => {
         ...newRecord,
         fields: {
           ...newRecord?.fields,
-          gameData1: match1Data?.data?.records[0]?.fields,
+          GameData1: match1Data?.data?.records[0]?.fields,
         },
       };
     }
@@ -74,7 +80,7 @@ const getAllCombo = catchAsync(async (req, res) => {
         ...newRecord,
         fields: {
           ...newRecord?.fields,
-          gameData2: match2Data?.data?.records[0]?.fields,
+          GameData2: match2Data?.data?.records[0]?.fields,
         },
       };
     }
@@ -90,7 +96,7 @@ const getAllCombo = catchAsync(async (req, res) => {
         ...newRecord,
         fields: {
           ...newRecord?.fields,
-          gameData3: match3Data?.data?.records[0]?.fields,
+          GameData3: match3Data?.data?.records[0]?.fields,
         },
       };
     }
@@ -103,6 +109,9 @@ const getAllCombo = catchAsync(async (req, res) => {
     statusCode: 200,
     message: "Retrieved all combo successfully!",
     data,
+    meta: {
+      total: data.length,
+    },
   });
 });
 
