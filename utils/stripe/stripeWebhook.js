@@ -33,31 +33,48 @@ const stripeWebhook = catchAsync(async (request, response) => {
     if (
       subscription.status === "active" &&
       subscription.trial_end &&
-      Date.now() > subscription.trial_end * 1000
+      Date.now() > subscription.trial_end + 10 * 60 * 1000
     ) {
-      // Attempt to charge the user's card
+    try {
       const invoice = await stripe.invoices.create({
         customer: subscription.customer,
         auto_advance: true, // Automatically pay the invoice
       });
 
-      await updateSubscription({ subscription, invoice });
-      data = invoice;
+await updateSubscription({ subscription, invoice });
 
-      // Handle successful payment and update your database accordingly
-      // For example, update user status or send confirmation email
+if (invoice && invoice.status === 'open') {
+  const paymentIntent = await stripe.paymentIntents.confirm(invoice.payment_intent);
+  if (paymentIntent.status === 'requires_action') {
+    sendResponse(response, {
+      statusCode: 200,
+      success: true,
+      message: "Additional authentication required",
+      data: { clientSecret: paymentIntent.client_secret }
+    });
+    return;
+  }
+}
+
+        // Handle successful payment and update your database accordingly
+        // For example, update user status or send confirmation email
+      } catch (error) {
+  console.error('Error handling subscription after trial:', error);
+  response.status(500).send('Error handling subscription after trial');
+  return;
+}
     }
   } else {
-    console.log(`Unhandled event type ${event.type}`);
-  }
+  console.log(`Unhandled event type ${event.type}`);
+}
 
-  // Return a 200 response to acknowledge receipt of the event
-  sendResponse(response, {
-    statusCode: 200,
-    success: true,
-    message: "Webhook received",
-    data,
-  });
+// Return a 200 response to acknowledge receipt of the event
+sendResponse(response, {
+  statusCode: 200,
+  success: true,
+  message: "Webhook received",
+  data,
+});
 });
 
 module.exports = stripeWebhook;
