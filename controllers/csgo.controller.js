@@ -64,7 +64,11 @@ const getAllCsgoMatchesByDate = catchAsync(async (req, res) => {
       message: "CS:GO Match retrieved successfully",
       data: convertedDatas,
     });
-  } else {
+  }
+  else if(filter === "schedule"){
+    console.log(filter)
+  }
+  else {
     const field = "Date";
 
     if (!field || !value) {
