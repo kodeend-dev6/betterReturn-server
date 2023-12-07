@@ -8,17 +8,17 @@ const paymentSuccessToDB = async ({ subscription, customer_email }) => {
     // update Subscription_id, Plan_end_date in database
     const newData = {
       Subscription_id: subscription?.id || "",
-      Plan_end_date: moment.unix(subscription?.current_period_end),
+      Plan_end_date: moment.unix(subscription?.current_period_end) || "",
       PaymentRequired: false,
       InvoiceURL: "",
     };
 
     const user = await findUser(customer_email, {
-      throwError: true,
+      throwError: false,
     });
 
     // Update to airtable
-    const airtableURL = `${config?.db?.user}/${user?.id}`;
+    const airtableURL = `${config?.db?.userTableUrl}/${user?.id}`;
     const data = { fields: newData };
     const response = await fetcher.patch(airtableURL, data);
 

@@ -6,8 +6,9 @@ const updatePaymentRequired = async (invoice) => {
   try {
     const { customer_email, hosted_invoice_url } = invoice;
 
-    const user = await findUser(customer_email, { throwError: true });
-    const airtableURL = `${config?.db?.user}/${user?.id}`;
+    const user = await findUser(customer_email, { throwError: false });
+
+    const airtableURL = `${config?.db?.userTableUrl}/${user?.id}`;
     const data = {
       fields: {
         PaymentRequired: true,
@@ -15,7 +16,8 @@ const updatePaymentRequired = async (invoice) => {
       },
     };
     const response = await fetcher.patch(airtableURL, data);
-    
+
+    return response.data;
   } catch (error) {
     console.log(error?.message);
   }
