@@ -24,7 +24,7 @@ const createSubscriptionToDB = async (subscription) => {
         ? moment.unix(subscription.current_period_end)
         : "",
       FreeTier: true,
-      Plan_name: plan?.name || "",
+      Plan_name: plan?.fields?.nickName || "",
       Stripe_id: subscription?.customer?.id || "",
       Subscription_id: subscription?.id || "",
     };
