@@ -1,7 +1,6 @@
 const axios = require("axios");
-const ApiError = require("../utils/errors/ApiError");
 
-const createUserToKlaviyo = async ({ email, phone, location }) => {
+const createUserToKlaviyo = async ({ email, phone }) => {
   const KLAVIYO_PRIVATE_API_KEY = "pk_3711f1c4388902ff9bdbad9371228001aa";
   const KLAVIYO_LIST_ID = "U2ahMU";
 
@@ -26,7 +25,7 @@ const createUserToKlaviyo = async ({ email, phone, location }) => {
                 attributes: {
                   email: email,
                   phone_number: phone,
-                  location: location,
+                  // location: location,
                   subscriptions: {
                     email: { marketing: { consent: "SUBSCRIBED" } },
                     // sms: { marketing: { consent: "SUBSCRIBED" } },
@@ -43,14 +42,17 @@ const createUserToKlaviyo = async ({ email, phone, location }) => {
     },
   };
 
-  try {
-    const res = await axios.request(options);
+  // try {
+  const res = await axios.request(options);
 
-    return res?.data;
-  } catch (error) {
-    console.log(error?.response?.data);
-    throw new ApiError(500, error?.message || "Error sending email");
-  }
+  return res?.data;
+  // } catch (error) {
+  //   console.log(error?.response?.data);
+  //   throw new ApiError(
+  //     500,
+  //     error?.message || "Error creating account to Klaviyo"
+  //   );
+  // }
 };
 
 module.exports = createUserToKlaviyo;

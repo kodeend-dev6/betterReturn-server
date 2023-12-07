@@ -74,8 +74,10 @@ const createNewUser = catchAsync(async (req, res) => {
 
   await createUserToKlaviyo({
     email: response?.data?.fields?.Email,
-    phone: response?.data?.fields?.Mobile,
-    location: response?.data?.fields?.Country,
+    phone:
+      String(response?.data?.fields?.Country_code) +
+      response?.data?.fields?.Mobile,
+    // location: response?.data?.fields?.Country,
   });
 
   const accessToken = getToken({
