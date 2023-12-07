@@ -2,7 +2,7 @@ const { findUser } = require("../user.helper");
 const config = require("../../config/config");
 const fetcher = require("../../utils/fetcher/airTableFetcher");
 
-const updatePaymentRequired = async ({ invoice }) => {
+const updatePaymentRequired = async (invoice) => {
   try {
     const { customer_email, hosted_invoice_url } = invoice;
 

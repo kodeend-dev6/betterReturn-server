@@ -1,4 +1,5 @@
 const createSubscriptionToDB = require("../../helper/subscription/createSubscriptionToDB");
+const paymentSuccessToDB = require("../../helper/subscription/paymentSuccessToDB");
 const {
   updatePaymentRequired,
 } = require("../../helper/subscription/udpatePaymentRequired");
@@ -76,6 +77,16 @@ const stripeWebhook = catchAsync(async (request, response) => {
 
     console.log(invoice);
     await updatePaymentRequired(invoice);
+  } else if (event?.type === "invoice.payment_succeeded") {
+    const invoice = event.data.object;
+    const subscription = await stripe.subscriptions.retrieve(
+      invoice.subscription,
+      { expand: ["customer"] }
+    );
+    await paymentSuccessToDB({
+      subscription,
+      customer_email: invoice.customer_email,
+    });
   } else {
     console.log(`Unhandled event type ${event.type}`);
   }

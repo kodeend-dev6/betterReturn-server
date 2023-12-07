@@ -9,8 +9,6 @@ const updateSubscriptionToDB = async ({ subscription, invoice }) => {
     const newData = {
       Subscription_id: subscription?.id || "",
       Plan_end_date: moment.unix(subscription?.current_period_end),
-      PaymentRequired: false,
-      InvoiceURL: "",
     };
 
     const user = await findUser(invoice?.customer_email, {
