@@ -3,7 +3,6 @@ const userTable = config.db.userTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require("axios");
 const bcrypt = require("bcrypt");
-const emailCheck = require("../helper/emailCheck");
 const ApiError = require("../utils/errors/ApiError");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
@@ -18,6 +17,7 @@ const {
 const sendNodeEmail = require("../helper/email/sendNodeEmail");
 const emailVerificationTemplate = require("../helper/email/emailVerificationTemplate");
 const forgotPasswordTemplate = require("../helper/email/forgotPasswordTemplate");
+const createUserToKlaviyo = require("../helper/createUserToKlaviyo");
 
 // User Registration
 const createNewUser = catchAsync(async (req, res) => {
@@ -33,7 +33,7 @@ const createNewUser = catchAsync(async (req, res) => {
   }
 
   // Check if the email already exists
-  const emailExists = await emailCheck.isUserEmailExists(Email);
+  const emailExists = await findUser(Email, { throwError: false });
 
   if (emailExists) {
     throw new ApiError(403, "User already exists with this email");
@@ -46,6 +46,7 @@ const createNewUser = catchAsync(async (req, res) => {
   fields.Logins_count = 1;
   fields.Created_at = new Date().toISOString();
   fields.Updated_at = new Date().toISOString();
+  fields.Is_email_notifications_enabled = true;
   fields.Password = hashedPassword;
   const { otp, hashedOTP, otpExpires } = generateOTP();
   fields.OTP = hashedOTP;
@@ -69,6 +70,14 @@ const createNewUser = catchAsync(async (req, res) => {
     email: response?.data?.fields?.Email,
     subject: "Email Verification",
     html: emailVerificationTemplate({ otp }),
+  });
+
+  await createUserToKlaviyo({
+    email: response?.data?.fields?.Email,
+    phone:
+      String(response?.data?.fields?.Country_code) +
+      response?.data?.fields?.Mobile,
+    // location: response?.data?.fields?.Country,
   });
 
   const accessToken = getToken({

@@ -1,11 +1,6 @@
 const axios = require("axios");
-const ApiError = require("../utils/errors/ApiError");
-const crypto = require("crypto");
 
-const sendEmail = async ({ email, subject, properties }) => {
-  const otp = crypto.randomInt(100000, 999999);
-
-  const template_id = "Rm6bzc";
+const createUserToKlaviyo = async ({ email, phone }) => {
   const KLAVIYO_PRIVATE_API_KEY = "pk_3711f1c4388902ff9bdbad9371228001aa";
   const KLAVIYO_LIST_ID = "U2ahMU";
 
@@ -24,13 +19,13 @@ const sendEmail = async ({ email, subject, properties }) => {
         type: "profile-subscription-bulk-create-job",
         attributes: {
           profiles: {
-            otp: otp,
             data: [
               {
                 type: "profile",
                 attributes: {
                   email: email,
-                  // phone_number: "+8801912056534",
+                  phone_number: phone,
+                  // location: location,
                   subscriptions: {
                     email: { marketing: { consent: "SUBSCRIBED" } },
                     // sms: { marketing: { consent: "SUBSCRIBED" } },
@@ -47,14 +42,17 @@ const sendEmail = async ({ email, subject, properties }) => {
     },
   };
 
-  try {
-    const res = await axios.request(options);
+  // try {
+  const res = await axios.request(options);
 
-    return res?.data;
-  } catch (error) {
-    console.log(error?.response?.data);
-    throw new ApiError(500, error?.message || "Error sending email");
-  }
+  return res?.data;
+  // } catch (error) {
+  //   console.log(error?.response?.data);
+  //   throw new ApiError(
+  //     500,
+  //     error?.message || "Error creating account to Klaviyo"
+  //   );
+  // }
 };
 
-module.exports = sendEmail;
+module.exports = createUserToKlaviyo;
