@@ -65,9 +65,6 @@ const getAllCsgoMatchesByDate = catchAsync(async (req, res) => {
       data: convertedDatas,
     });
   }
-  else if(filter === "schedule"){
-    console.log(filter)
-  }
   else {
     const field = "Date";
 

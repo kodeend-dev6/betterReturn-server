@@ -17,6 +17,7 @@ const paymentRouter = require("./routes/payment.route");
 const PickOfTheDayRouter = require("./routes/pickOfDay.route");
 const reviewRouter = require("./routes/review.route");
 const comboRouter = require("./routes/combo.route");
+const handicapRouter = require("./routes/handicap.route");
 
 const passport = require("passport");
 const expressSession = require("express-session");
@@ -66,6 +67,7 @@ app.use("/api/payment", paymentRouter);
 app.use("/api/pick-of-the-day", PickOfTheDayRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/combo", comboRouter);
+app.use("/api/handicap", handicapRouter);
 
 // Global Error Handler
 app.use(globalErrorHandler);
