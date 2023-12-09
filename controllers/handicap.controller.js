@@ -41,7 +41,7 @@ const getAllHandicap = catchAsync(async (req, res) => {
             ...newRecord,
             fields: {
               ...newRecord?.fields,
-              GameData: matchData?.data?.records[0]?.fields,
+              ...matchData?.data?.records[0]?.fields,
             },
           };
         }
@@ -52,7 +52,7 @@ const getAllHandicap = catchAsync(async (req, res) => {
     sendResponse(res, {
         success: true,
         statusCode: 200,
-        message: "Retrieved all combo successfully!",
+        message: "Retrieved all handicap successfully!",
         data,
         meta: {
             total: data.length,
