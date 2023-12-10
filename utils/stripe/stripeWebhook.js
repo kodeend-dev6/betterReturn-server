@@ -1,4 +1,5 @@
 const createSubscriptionToDB = require("../../helper/subscription/createSubscriptionToDB");
+const deletedSubscriptionToDB = require("../../helper/subscription/deleteSubscriptionToDB");
 const paymentSuccessToDB = require("../../helper/subscription/paymentSuccessToDB");
 const {
   updatePaymentRequired,
@@ -38,39 +39,12 @@ const stripeWebhook = catchAsync(async (request, response) => {
       { expand: ["customer"] }
     );
     await updateSubscriptionToDB(subscription);
-    // if (
-    //   subscription.status === "active" &&
-    //   subscription.trial_end &&
-    //   Date.now() > subscription.trial_end + 1 * 24 * 60 * 60 * 1000
-    // ) {
-    //   try {
-    //     const invoice = await stripe.invoices.create({
-    //       customer: subscription.customer,
-    //       auto_advance: true, // Automatically pay the invoice
-    //     });
-
-    //     await updateSubscription({ subscription, invoice });
-
-    //     if (invoice && invoice.status === "open") {
-    //       const paymentIntent = await stripe.paymentIntents.confirm(
-    //         invoice.payment_intent
-    //       );
-    //       if (paymentIntent.status === "requires_action") {
-    //         sendResponse(response, {
-    //           statusCode: 200,
-    //           success: true,
-    //           message: "Additional authentication required",
-    //           data: { clientSecret: paymentIntent.client_secret },
-    //         });
-    //         return;
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error("Error handling subscription after trial:", error);
-    //     response.status(500).send("Error handling subscription after trial");
-    //     return;
-    //   }
-    // }
+  } else if (event.type === "customer.subscription.deleted") {
+    const subscription = await stripe.subscriptions.retrieve(
+      event.data.object.id,
+      { expand: ["customer"] }
+    );
+    await deletedSubscriptionToDB(subscription);
   } else if (event?.type === "invoice.payment_action_required") {
     const invoice = event.data.object;
 
