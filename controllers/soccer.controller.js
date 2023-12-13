@@ -3,7 +3,6 @@ const soccerTable = config.db.soccerTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require("axios");
 const moment = require("moment");
-const moment2 = require("moment-timezone");
 const {
   convertedFromDB,
   convertedToDB,
