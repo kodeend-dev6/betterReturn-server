@@ -166,6 +166,7 @@ const userLogin = catchAsync(async (req, res) => {
     statusCode: 200,
     success: true,
     message: "User logged in.",
+    isExistingUser: false,
     data: { accessToken, ...data },
   });
 });
