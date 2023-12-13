@@ -11,7 +11,7 @@ const getAllCombo = catchAsync(async (req, res) => {
   if (filter) {
     const result = await fetcher.get(config.db.comboTableUrl, {
       params: {
-        filterByFormula: `{Date} <= '${date}'`,
+        filterByFormula: `{Date} < '${date}'`,
         pageSize: limit,
         sort: [{ field: "Date", direction: "desc" }],
       },
