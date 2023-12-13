@@ -9,15 +9,19 @@ const sendResponse = require("../utils/sendResponse");
 const getAllHandicap = catchAsync(async (req, res) => {
   const date = req.query.date;
   const finished = req.query.finished;
+  const limit = 100;
 
 
   if (finished) {
+
     const result = await fetcher.get(handicapTable, {
       params: {
         filterByFormula: `AND({Date} <= '${date}', {upload}=1)`,
+        pageSize: limit,
         sort: [{ field: "Date", direction: "desc" }],
       },
     });
+
 
     let data = [];
 
@@ -29,13 +33,14 @@ const getAllHandicap = catchAsync(async (req, res) => {
         ? {
           matchId: record?.fields?.MatchID,
           tableUrl: soccerTable,
+
         }
         : null;
 
       if (match) {
         const matchData = await fetcher.get(`${match?.tableUrl}`, {
           params: {
-            filterByFormula: `AND({MatchID} = "${match?.matchId}", NOT({Results} = BLANK()))`,
+            filterByFormula: `{MatchID} = "${match?.matchId}"`,
           },
         });
 
@@ -46,15 +51,17 @@ const getAllHandicap = catchAsync(async (req, res) => {
             ...matchData?.data?.records[0]?.fields,
           },
         };
+
+      }
+  
+      if (newRecord?.fields?.MatchResults) {
+        data.push(newRecord);
       }
 
-      // Add your date comparison logic here to filter by today and previous dates
-
-      data.push(newRecord);
-
-      if (data.length > 100) {
+      if (finished && data.length >= limit) {
         break;
       }
+
     }
 
     sendResponse(res, {
