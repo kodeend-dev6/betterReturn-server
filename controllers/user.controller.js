@@ -162,7 +162,7 @@ const insertOldUser = catchAsync(async (req, res, next) => {
 
   const users = oldUsers.map((user) => {
     const fields = {
-      Id: user.id || "",
+      PrevId: user.id || "",
       Name: user.name || "",
       Email: user.email || "",
       Mobile: user.mobile || "",
