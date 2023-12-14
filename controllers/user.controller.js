@@ -154,7 +154,7 @@ const updateUserInfo = catchAsync(async (req, res) => {
 });
 
 // Insert Old User
-const insertOldUser = catchAsync(async (req, res, next) => {
+const insertOldUser = catchAsync(async (req, res) => {
   // get users from req.body
   const oldUsers = req.body;
 
@@ -216,7 +216,7 @@ const insertOldUser = catchAsync(async (req, res, next) => {
 });
 
 // Update Old User
-const updateOldUser = catchAsync(async (req, res, next) => {
+const updateOldUser = catchAsync(async (req, res) => {
   const customerId = req.query.customerId;
   const oldUsers = await fetcher.get(`${userTable}`, {
     params: {

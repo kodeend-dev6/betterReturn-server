@@ -41,6 +41,14 @@ const createNewUser = catchAsync(async (req, res) => {
     throw new ApiError(403, "User already exists with this email");
   }
 
+  await createUserToKlaviyo({
+    email: response?.data?.fields?.Email,
+    phone:
+      String(response?.data?.fields?.Country_code) +
+      response?.data?.fields?.Mobile,
+    // location: response?.data?.fields?.Country,
+  });
+
   const hashedPassword = bcrypt.hashSync(Password, 10);
 
   fields.Email = Email.toLowerCase();
@@ -75,13 +83,7 @@ const createNewUser = catchAsync(async (req, res) => {
     html: emailVerificationTemplate({ otp }),
   });
 
-  await createUserToKlaviyo({
-    email: response?.data?.fields?.Email,
-    phone:
-      String(response?.data?.fields?.Country_code) +
-      response?.data?.fields?.Mobile,
-    // location: response?.data?.fields?.Country,
-  });
+  
 
   const accessToken = getToken({
     id: response.data.id,

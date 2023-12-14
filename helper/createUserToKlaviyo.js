@@ -1,8 +1,9 @@
 const axios = require("axios");
+const ApiError = require("../utils/errors/ApiError");
 
 const createUserToKlaviyo = async ({ email, phone }) => {
-  const KLAVIYO_PRIVATE_API_KEY = "pk_3711f1c4388902ff9bdbad9371228001aa";
-  const KLAVIYO_LIST_ID = "U2ahMU";
+  const KLAVIYO_PRIVATE_API_KEY = process.env.KLAVIYO_PRIVATE_API_KEY;
+  const KLAVIYO_LIST_ID = process.env.KLAVIYO_LIST_ID;
 
   // ------------ Subscribe Email --------------
   const options = {
@@ -42,17 +43,18 @@ const createUserToKlaviyo = async ({ email, phone }) => {
     },
   };
 
-  // try {
-  const res = await axios.request(options);
+  try {
+    const res = await axios.request(options);
 
-  return res?.data;
-  // } catch (error) {
-  //   console.log(error?.response?.data);
-  //   throw new ApiError(
-  //     500,
-  //     error?.message || "Error creating account to Klaviyo"
-  //   );
-  // }
+    return res?.data;
+  } catch (error) {
+    console.log(error?.response?.data);
+    throw new ApiError(
+      500,
+      // error?.message || "Error creating account to Klaviyo"
+      "Wrong email or phone number!"
+    );
+  }
 };
 
 module.exports = createUserToKlaviyo;
