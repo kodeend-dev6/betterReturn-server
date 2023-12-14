@@ -42,10 +42,8 @@ const createNewUser = catchAsync(async (req, res) => {
   }
 
   await createUserToKlaviyo({
-    email: response?.data?.fields?.Email,
-    phone:
-      String(response?.data?.fields?.Country_code) +
-      response?.data?.fields?.Mobile,
+    email: Email,
+    phone: String(Country_code) + Mobile,
     // location: response?.data?.fields?.Country,
   });
 
@@ -82,8 +80,6 @@ const createNewUser = catchAsync(async (req, res) => {
     subject: "Email Verification",
     html: emailVerificationTemplate({ otp }),
   });
-
-  
 
   const accessToken = getToken({
     id: response.data.id,
