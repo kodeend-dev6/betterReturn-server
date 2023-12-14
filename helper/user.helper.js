@@ -25,7 +25,7 @@ const authenticateUser = async ({ email, password }) => {
   if (bcrypt.compareSync(password, user?.fields?.Password)) {
     return { isAuthenticated: true, data: user };
   } else {
-    return { isAuthenticated: false, data: null, isExisting };
+    return { isAuthenticated: false, data: null };
   }
 };
 
@@ -35,7 +35,8 @@ const findUser = async (email, { throwError }) => {
       Authorization: `Bearer ${apiKey}`,
     },
     params: {
-      filterByFormula: `Email = "${email}"`,
+      // filterByFormula: `Email = "${email}"`,
+      filterByFormula: `FIND(LOWER("${email}"), LOWER(Email))`,
     },
   });
 

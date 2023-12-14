@@ -33,7 +33,9 @@ const createNewUser = catchAsync(async (req, res) => {
   }
 
   // Check if the email already exists
-  const emailExists = await findUser(Email, { throwError: false });
+  const emailExists = await findUser(Email.toLowerCase(), {
+    throwError: false,
+  });
 
   if (emailExists) {
     throw new ApiError(403, "User already exists with this email");
@@ -41,6 +43,7 @@ const createNewUser = catchAsync(async (req, res) => {
 
   const hashedPassword = bcrypt.hashSync(Password, 10);
 
+  fields.Email = Email.toLowerCase();
   fields.Created_at = new Date().toISOString();
   fields.Role = "user";
   fields.Logins_count = 1;
@@ -323,7 +326,7 @@ const resetPassword = catchAsync(async (req, res) => {
 const googleLoginCallback = catchAsync(async (req, res) => {
   const info = {
     Name: req.user._json.name,
-    Email: req.user._json.email,
+    Email: req.user._json.email.toLowerCase(),
     Google_id: req.user._json.sub,
     Image: req.user._json.picture,
     Country: req.user._json.country,
