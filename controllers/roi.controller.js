@@ -58,7 +58,6 @@ const getRoi = catchAsync(async (req, res) => {
             success: true,
             message: "Roi calculation is successful",
             data: { roi: finalBalance },
-
         });
     } catch (error) {
         sendResponse(res, {
