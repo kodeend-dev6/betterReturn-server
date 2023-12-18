@@ -11,6 +11,7 @@ const getRoi = catchAsync(async (req, res) => {
         const startedDate = new Date(startDate);
         let currentDate = new Date(endDate);
         let finalBalance = initialBalance;
+        let dataArray = [];
 
         while (currentDate <= startedDate) {
             const result = await fetcher.get(soccerTable, {
@@ -40,6 +41,9 @@ const getRoi = catchAsync(async (req, res) => {
                 }
             }
 
+            // Push date and finalBalance into dataArray as an object
+            dataArray.push({ date: currentDate.toISOString().slice(0, 10), finalBalance });
+
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
@@ -47,7 +51,7 @@ const getRoi = catchAsync(async (req, res) => {
             statusCode: 200,
             success: true,
             message: "Roi calculation is successful",
-            data: { roi: finalBalance },
+            data: { roi: finalBalance, dataArray },
         });
     } catch (error) {
         sendResponse(res, {
@@ -60,4 +64,3 @@ const getRoi = catchAsync(async (req, res) => {
 });
 
 module.exports = { getRoi };
-
