@@ -7,9 +7,8 @@ const globalErrorHandler = (err, req, res, next) => {
   let statusCode = err?.statusCode || 500;
   let message = err?.message || "Something went wrong!";
 
-  
-  console.log(err)
-  
+  // console.log(err.response.data)
+
   if (err instanceof AxiosError) {
     message = "Internal Server Error";
     statusCode = err?.response?.status || 500;

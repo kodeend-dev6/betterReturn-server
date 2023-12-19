@@ -7,8 +7,8 @@ const deletedSubscriptionToDB = async (subscription) => {
   const data = {
     fields: {
       Subscription_id: "",
-      Plan_start_date: "",
-      Plan_end_date: "",
+      Plan_start_date: null,
+      Plan_end_date: null,
       Plan_name: "",
       FreeTier: true,
     },

@@ -50,11 +50,10 @@ const createNewUser = catchAsync(async (req, res) => {
   const hashedPassword = bcrypt.hashSync(Password, 10);
 
   fields.Email = Email.toLowerCase();
-  fields.Created_at = new Date().toISOString();
   fields.Role = "user";
   fields.Logins_count = 1;
-  fields.Created_at = new Date().toISOString();
-  fields.Updated_at = new Date().toISOString();
+  // fields.Created_at = new Date().toISOString();
+  // fields.Updated_at = new Date().toISOString();
   fields.Is_email_notifications_enabled = true;
   fields.Password = hashedPassword;
   const { otp, hashedOTP, otpExpires } = generateOTP();
@@ -338,8 +337,8 @@ const googleLoginCallback = catchAsync(async (req, res) => {
 
     info.Role = "user";
     info.Logins_count = 1;
-    info.Created_at = new Date().toISOString();
-    info.Updated_at = new Date().toISOString();
+    // info.Created_at = new Date().toISOString();
+    // info.Updated_at = new Date().toISOString();
     info.OTP = hashedOTP;
     info.OTPExpires = String(otpExpires);
     const data = { fields: info };

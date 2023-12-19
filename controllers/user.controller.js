@@ -162,38 +162,38 @@ const insertOldUser = catchAsync(async (req, res) => {
 
   const users = oldUsers.map((user) => {
     const fields = {
-      PrevId: user.id || "",
+      PrevId: Number(user.id) || "",
       Name: user.name || "",
       Email: user.email || "",
       Mobile: user.mobile || "",
       Country_code: user.country_code || "",
       Country: user.country || "",
       Role: user.role || "",
-      Email_verified_at: user.email_verified_at || "",
+      Email_verified_at: user.email_verified_at || null,
       Remember_token: user.remember_token || "",
-      Created_at: user.created_at || "",
-      Updated_at: user.updated_at || "",
-      Deleted_at: user.deleted_at || "",
-      Free_plan_over_email_sent_at: user.free_plan_over_email_sent_at || "",
+      // Created_at: user.created_at || undefined,
+      // Updated_at: user.updated_at || undefined,
+      Deleted_at: user.deleted_at || null,
+      Free_plan_over_email_sent_at: user.free_plan_over_email_sent_at || null,
       Stripe_id: user.stripe_id || "",
       Pm_type: user.pm_type || "",
       Pm_last_four: user.pm_last_four || "",
-      Trial_ends_at: user.trial_ends_at || "",
+      Trial_ends_at: user.trial_ends_at || null,
       Image: user.image || "",
-      Gift_code_valid_till: user.gift_code_valid_till || "",
+      Gift_code_valid_till: user.gift_code_valid_till || null,
       Is_sms_notifications_enabled:
         user.is_sms_notifications_enabled === "1" ? true : false || true,
       Is_email_notifications_enabled:
         user.is_email_notifications_enabled === "1" ? true : false || true,
-      Match_reminder_sms_sent_at: user.match_reminder_sms_sent_at || "",
+      Match_reminder_sms_sent_at: user.match_reminder_sms_sent_at || null,
       Is_staff_member: false,
       Logins_count: Number(user.logins_count) || "",
       Facebook_id: user.facebook_id || "",
       Google_id: user.google_id || "",
       Subscription_id: "",
       FreeTier: false,
-      Plan_start_date: "",
-      Plan_end_date: "",
+      Plan_start_date: null,
+      Plan_end_date: null,
       Plan_name: "",
       IsExisting: true,
     };
@@ -238,17 +238,19 @@ const updateOldUser = catchAsync(async (req, res) => {
     const data = {
       fields: {
         Subscription_id: customer?.subscriptions?.data[0]?.id,
-        Plan_start_date: new Date(
-          customer?.subscriptions?.data[0]?.current_period_start * 1000
-        ).toISOString(),
-        Plan_end_date: new Date(
-          customer?.subscriptions?.data[0]?.current_period_end * 1000
-        ).toISOString(),
+        Plan_start_date:
+          new Date(
+            customer?.subscriptions?.data[0]?.current_period_start * 1000
+          ).toISOString() || null,
+        Plan_end_date:
+          new Date(
+            customer?.subscriptions?.data[0]?.current_period_end * 1000
+          ).toISOString() || null,
         FreeTier: true,
         Trial_ends_at:
           new Date(
             customer?.subscriptions?.data[0]?.trial_end * 1000
-          ).toISOString() || "",
+          ).toISOString() || null,
       },
     };
 

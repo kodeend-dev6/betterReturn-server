@@ -16,13 +16,13 @@ const createSubscriptionToDB = async (subscription) => {
     const newData = {
       Trial_ends_at: subscription?.trial_end
         ? moment.unix(subscription.trial_end)
-        : "",
+        : null,
       Plan_start_date: subscription?.current_period_start
         ? moment.unix(subscription.current_period_start)
-        : "",
+        : null,
       Plan_end_date: subscription?.current_period_end
         ? moment.unix(subscription.current_period_end)
-        : "",
+        : null,
       FreeTier: true,
       Plan_name: plan?.fields?.nickName || "",
       Stripe_id: subscription?.customer?.id || "",

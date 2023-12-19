@@ -8,7 +8,7 @@ const paymentSuccessToDB = async ({ subscription, customer_email }) => {
     // update Subscription_id, Plan_end_date in database
     const newData = {
       Subscription_id: subscription?.id || "",
-      Plan_end_date: moment.unix(subscription?.current_period_end) || "",
+      Plan_end_date: moment.unix(subscription?.current_period_end) || null,
       PaymentRequired: false,
       InvoiceURL: "",
     };
