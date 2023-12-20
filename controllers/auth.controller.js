@@ -41,11 +41,11 @@ const createNewUser = catchAsync(async (req, res) => {
     throw new ApiError(403, "User already exists with this email");
   }
 
-  await createUserToKlaviyo({
-    email: Email,
-    phone: String(Country_code) + Mobile,
-    // location: response?.data?.fields?.Country,
-  });
+  // await createUserToKlaviyo({
+  //   email: Email,
+  //   phone: String(Country_code) + Mobile,
+  //   // location: response?.data?.fields?.Country,
+  // });
 
   const hashedPassword = bcrypt.hashSync(Password, 10);
 
