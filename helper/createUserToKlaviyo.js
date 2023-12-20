@@ -25,7 +25,7 @@ const createUserToKlaviyo = async ({ email, phone }) => {
                 type: "profile",
                 attributes: {
                   email: email,
-                  phone_number: phone,
+                  // phone_number: phone,
                   // location: location,
                   subscriptions: {
                     email: { marketing: { consent: "SUBSCRIBED" } },
