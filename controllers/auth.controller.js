@@ -333,14 +333,15 @@ const googleLoginCallback = catchAsync(async (req, res) => {
 
   // If user doesn't exist, create a new user with google info
   if (!user) {
-    const { otp, hashedOTP, otpExpires } = generateOTP();
+    // const { otp, hashedOTP, otpExpires } = generateOTP();
+    // info.Created_at = new Date().toISOString();
+    // info.OTP = hashedOTP;
+    // info.OTPExpires = String(otpExpires);
+    // info.Updated_at = new Date().toISOString();
 
     info.Role = "user";
     info.Logins_count = 1;
-    // info.Created_at = new Date().toISOString();
-    // info.Updated_at = new Date().toISOString();
-    info.OTP = hashedOTP;
-    info.OTPExpires = String(otpExpires);
+    info.Email_verified_at = new Date().toISOString();
     const data = { fields: info };
 
     const response = await axios.post(userTable, data, {
@@ -350,11 +351,11 @@ const googleLoginCallback = catchAsync(async (req, res) => {
       },
     });
 
-    await sendNodeEmail({
-      email: response?.data?.fields?.Email,
-      subject: "Email Verification",
-      html: emailVerificationTemplate({ otp }),
-    });
+    // await sendNodeEmail({
+    //   email: response?.data?.fields?.Email,
+    //   subject: "Email Verification",
+    //   html: emailVerificationTemplate({ otp }),
+    // });
 
     const accessToken = getToken({
       id: response?.data?.id,
