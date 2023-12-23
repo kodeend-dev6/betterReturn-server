@@ -2,7 +2,6 @@ const config = require("../config/config");
 const userTable = config.db.userTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require("axios");
-const { isFreetierUsed } = require("../helper/checkFreeTier");
 const catchAsync = require("../utils/errors/catchAsync");
 const { findUser } = require("../helper/user.helper");
 const sendResponse = require("../utils/sendResponse");
@@ -11,6 +10,7 @@ const fs = require("fs");
 const ApiError = require("../utils/errors/ApiError");
 const path = require("path");
 const fetcher = require("../utils/fetcher/airTableFetcher");
+const dataCount = require("../helper/dataCount");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const getAllUser = catchAsync(async (req, res) => {
@@ -39,6 +39,7 @@ const getAllUser = catchAsync(async (req, res) => {
   });
 
   const data = result?.data?.records;
+  const { total } = await dataCount({ tableName: "User" });
 
   sendResponse(res, {
     success: true,
@@ -46,7 +47,7 @@ const getAllUser = catchAsync(async (req, res) => {
     message: "Users Retrieved Successfully",
     data: data,
     meta: {
-      total: data?.length,
+      total: total,
       totalPages: Math.ceil(data?.length / limit),
       nextOffset: result?.data?.offset,
     },
@@ -66,52 +67,7 @@ const getSingleUser = catchAsync(async (req, res) => {
   });
 });
 
-const buyPlan = async (req, res) => {
-  try {
-    const userID = req.query.userID;
-    const { fields } = req.body;
-
-    const FreeTierUsed = await isFreetierUsed(fields.Email);
-
-    if (!FreeTierUsed) {
-      return res.json({
-        message: "You have already Used the Free Plan. Please pay Now.",
-      });
-    }
-
-    const airtableURL = `${userTable}/${userID}`;
-    const headers = {
-      Authorization: `Bearer ${apiKey}`,
-    };
-
-    const today = new Date();
-    const nextWeek = new Date(today);
-    const freeEndDate = nextWeek.setDate(today.getDate() + 7);
-
-    const data = { fields };
-
-    data.fields["Plan_start_date"] = today.toISOString();
-
-    if (fields.Plan_name === "Basic") {
-      data.fields["FreeTier"] = true;
-      data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
-    } else {
-      data.fields["Plan_end_date"] = new Date(freeEndDate).toISOString();
-    }
-
-    const response = await axios.patch(airtableURL, data, { headers });
-
-    if (response.status === 200) {
-      res.status(200).json({ message: "Your plan is activated." });
-    } else {
-      res.status(response.status).json(response.data);
-    }
-  } catch (error) {
-    console.error("Buy plan error");
-    res.status(500).json({ message: error.message });
-  }
-};
-
+// Update User Info
 const updateUserInfo = catchAsync(async (req, res) => {
   const recordId = req.query.id;
   const input = req.body;
@@ -313,7 +269,6 @@ const cancelOldUserSubscription = catchAsync(async (req, res, next) => {
 module.exports = {
   getAllUser,
   getSingleUser,
-  buyPlan,
   updateUserInfo,
   insertOldUser,
   updateOldUser,
