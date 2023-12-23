@@ -68,12 +68,6 @@ const createNewUser = catchAsync(async (req, res) => {
     },
   });
 
-  // const emailResponse = await sendEmail({
-  //   email: response?.data?.fields?.Email,
-  //   subject: "Email Verification",
-  // });
-
-  // console.log(emailResponse);
   await sendNodeEmail({
     email: response?.data?.fields?.Email,
     subject: "Email Verification",
@@ -109,6 +103,7 @@ const userLogin = catchAsync(async (req, res) => {
       message:
         "You are an existing user. Please reset your password to continue.",
       isExistingUser: true,
+      data: { fields: { Email: data?.fields?.Email } },
     });
   }
 
@@ -267,9 +262,8 @@ const verifyForgotPasswordOTP = catchAsync(async (req, res) => {
       fields: {
         OTP: "",
         OTPExpires: "",
-        Email_verified_at: user?.fields?.Email_verified_at
-          ? ""
-          : new Date().toISOString(),
+        Email_verified_at:
+          user?.fields?.Email_verified_at || new Date().toISOString(),
         IsExisting: false,
       },
     },
@@ -351,12 +345,6 @@ const googleLoginCallback = catchAsync(async (req, res) => {
       },
     });
 
-    // await sendNodeEmail({
-    //   email: response?.data?.fields?.Email,
-    //   subject: "Email Verification",
-    //   html: emailVerificationTemplate({ otp }),
-    // });
-
     const accessToken = getToken({
       id: response?.data?.id,
       email: response?.data?.fields?.Email,
@@ -379,33 +367,29 @@ const googleLoginCallback = catchAsync(async (req, res) => {
   });
 
   // update the user info if google_id not found
-  if (!user?.fields?.Google_id) {
-    const options = {
-      method: "PATCH",
-      url: `${userTable}/${user?.id}`,
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+  const options = {
+    method: "PATCH",
+    url: `${userTable}/${user?.id}`,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    data: {
+      fields: {
+        Google_id: user?.fields?.Google_id || info?.Google_id,
+        Image: user?.fields?.Image || info?.Image,
+        Logins_count: user?.fields?.Logins_count + 1,
+        IsExisting: false,
+        Email_verified_at:
+          user?.fields?.Email_verified_at || new Date().toISOString(),
       },
-      data: {
-        fields: {
-          Google_id: info?.Google_id,
-          Image: info?.Image,
-          Logins_count: user?.fields?.Logins_count + 1,
-        },
-      },
-    };
+    },
+  };
 
-    try {
-      await axios.request(options);
-    } catch (error) {
-      console.log(error?.response?.data);
-    }
-  } else {
-    await incrementLoginCount({
-      id: user?.id,
-      prevLoginCount: user?.fields?.Logins_count,
-    });
+  try {
+    await axios.request(options);
+  } catch (error) {
+    console.log(error?.response?.data);
   }
 
   const redirectURL = `${process.env.USER_SITE_URL}/google-callback?token=${accessToken}`;

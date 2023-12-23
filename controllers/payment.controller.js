@@ -96,13 +96,7 @@ const createSubscription = catchAsync(async (req, res) => {
   const subscription = await stripe.subscriptions.create({
     customer: customer.id,
     items: [{ price: planId }],
-    // trial_period_days:
-    //   planId === "price_1OJCVbCBxfPNT5xiYk4DIhfp"
-    //     ? 1
-    //     : user?.fields?.FreeTier
-    //     ? undefined
-    //     : 7,
-    trial_end: Math.round(Date.now() / 1000) + 1800,
+    trial_period_days: user?.fields?.FreeTier ? undefined : 7,
     payment_settings: {
       payment_method_types: ["card"],
       save_default_payment_method: "on_subscription",

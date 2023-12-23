@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { promisify } = require("util");
 const ApiError = require("../utils/errors/ApiError");
+const catchAsync = require("../utils/errors/catchAsync");
 
 // Generate a token
 exports.getToken = (data, expire) => {
@@ -10,7 +11,7 @@ exports.getToken = (data, expire) => {
 };
 
 // Verify A Token
-exports.verifyToken = async (req, res, next) => {
+exports.verifyToken =catchAsync(async (req, res, next) => {
   try {
     const token = req.headers.authorization.split(" ")[1];
     if (!token) {
@@ -25,4 +26,4 @@ exports.verifyToken = async (req, res, next) => {
   } catch (error) {
     throw new ApiError(403, "Forbidden Access ..!");
   }
-};
+})
