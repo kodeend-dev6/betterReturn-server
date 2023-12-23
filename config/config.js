@@ -7,6 +7,7 @@ const reviewTable = "Review";
 const planTable = "Plans";
 const comboTable = "Combo";
 const handicapTable = "Handicap";
+const dbSummaryTable = "DBSummary";
 
 const config = {
   db: {
@@ -19,6 +20,7 @@ const config = {
     planTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${planTable}`,
     comboTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${comboTable}`,
     handicapTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${handicapTable}`,
+    dbSummaryTableUrl: `https://api.airtable.com/v0/${process.env.AIRTABLE_BASEID}/${dbSummaryTable}`,
   },
   key: {
     apiKey: process.env.AIRTABLE_APIKEY,
