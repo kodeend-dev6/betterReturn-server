@@ -3,7 +3,7 @@ const config = require("../config/config");
 const soccerTable = config.db.soccerTableUrl;
 const csgoTable = config.db.csgoTableUrl;
 const valorantTable = config.db.valorantTableUrl;
-const apiKey = config.key.apiKey;;
+const apiKey = config.key.apiKey;
 
 
 const getPickOfDay = async (req, res) => {
