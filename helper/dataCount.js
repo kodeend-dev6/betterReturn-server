@@ -10,7 +10,7 @@ const dataCount = async ({ tableName }) => {
       (item) => item.fields?.TableName === tableName
     );
 
-    return { total: data?.fields?.Total };
+    return { total: data?.fields?.Total, recordId: data?.id };
   } catch (error) {
     throw new ApiError(500, "Internal Server Error");
   }

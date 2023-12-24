@@ -6,6 +6,7 @@ const {
   getAllUser,
   updateUserInfo,
   getSingleUser,
+  deleteUser,
   insertOldUser,
   updateOldUser,
   cancelOldUserSubscription,
@@ -15,6 +16,7 @@ const upload = require("../utils/upload");
 router.get("/", getAllUser);
 router.get("/get", verifyToken, getSingleUser);
 router.put("/update", upload.single("Image"), updateUserInfo);
+router.delete("/", verifyToken, deleteUser);
 
 // insert old user
 router.post("/insert-old", insertOldUser);

@@ -109,6 +109,30 @@ const updateUserInfo = catchAsync(async (req, res) => {
   }
 });
 
+// Delete User
+const deleteUser = catchAsync(async (req, res) => {
+  const recordId = req?.query?.recordId;
+
+  // Delete from airtable
+  const airtableURL = `${userTable}/${recordId}`;
+  const response = await fetcher.delete(airtableURL);
+
+  // Decrement User Count
+  const { total, recordId: summaryId } = await dataCount({ tableName: "User" });
+  const data = { fields: { Total: total - 1 } };
+  const response2 = await fetcher.patch(
+    `${config.db.dbSummaryTableUrl}/${summaryId}`,
+    data
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "User Deleted Successfully",
+    // data: response?.data,
+  });
+});
+
 // Insert Old User
 const insertOldUser = catchAsync(async (req, res) => {
   // get users from req.body
@@ -270,6 +294,7 @@ module.exports = {
   getAllUser,
   getSingleUser,
   updateUserInfo,
+  deleteUser,
   insertOldUser,
   updateOldUser,
   cancelOldUserSubscription,
