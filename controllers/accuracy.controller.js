@@ -14,7 +14,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     const soccerResponse = await axios.get(soccerTable, {
         headers: { Authorization: `Bearer ${apiKey}` },
         params: {
-            fields: ["Results", "Date"],
+            fields: ["Results", "Date", "PredictedOdds"],
             filterByFormula: `AND(
                 NOT({MatchResults} = BLANK()),
                 {Date} <= '${formattedToday}',
@@ -23,10 +23,16 @@ const getAccuracy = catchAsync(async (req, res) => {
         },
     });
 
-    const soccerWin = soccerResponse.data.records?.filter(item => item.fields.Results === 'TRUE').length;
+    const soccerWinMatches = soccerResponse.data.records?.filter(item => item.fields.Results === 'TRUE')
+    let soccerTotalOdds = 0;
+    for (let i = 0; i < soccerWinMatches.length; i++) {
+        soccerTotalOdds += soccerWinMatches[i].fields.PredictedOdds;
+    }
+    const soccerWin = soccerWinMatches.length;
     const soccerLost = soccerResponse.data.records.length - soccerWin;
+    const soccerAverageOdds = (soccerTotalOdds / soccerWinMatches?.length).toFixed(2);
 
-    const soccerData = { soccerLost, soccerWin, total: soccerLost + soccerWin }
+    const soccerData = { soccerLost, soccerWin, soccerAverageOdds, total: soccerLost + soccerWin }
 
 
     const handicapResponse = await axios.get(handicapTable, {
@@ -41,12 +47,14 @@ const getAccuracy = catchAsync(async (req, res) => {
 
     let handicapWin = 0;
     let handicapLost = 0;
+    let handicapTotalOdds = 0
 
     for (let i = 0; i < handicapResponse?.data?.records.length; i++) {
         const match = handicapResponse?.data?.records[i];
         if (match?.fields?.T1CornerResult) {
             if (match?.fields?.T1CornerResult === 'True') {
                 handicapWin++;
+                handicapTotalOdds += Number(match?.fields?.T1CornerOdds);
             } else {
                 handicapLost++;
             }
@@ -55,6 +63,7 @@ const getAccuracy = catchAsync(async (req, res) => {
         if (match?.fields?.T2CornerResult) {
             if (match?.fields?.T2CornerResult === 'True') {
                 handicapWin++;
+                handicapTotalOdds += Number(match?.fields?.T2CornerOdds);
             } else {
                 handicapLost++;
             }
@@ -63,6 +72,7 @@ const getAccuracy = catchAsync(async (req, res) => {
         if (match?.fields?.TCornerResult) {
             if (match?.fields?.TCornerResult === 'True') {
                 handicapWin++;
+                handicapTotalOdds += Number(match?.fields?.TCornerOdds);
             } else {
                 handicapLost++;
             }
@@ -70,7 +80,8 @@ const getAccuracy = catchAsync(async (req, res) => {
         }
     }
 
-    const handicapData = { handicapLost, handicapWin, total: handicapLost + handicapWin };
+    const handicapAverageOdds = (handicapTotalOdds / handicapWin).toFixed(2);
+    const handicapData = { handicapLost, handicapWin, handicapAverageOdds, total: handicapLost + handicapWin };
 
     let data = {
         soccerData,
