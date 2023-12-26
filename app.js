@@ -20,6 +20,7 @@ const comboRouter = require("./routes/combo.route");
 const handicapRouter = require("./routes/handicap.route");
 const roiRouter = require('./routes/roi.route');
 const accuracyRouter = require('./routes/accuracy.route');
+const adminRouter = require("./routes/admin.route");
 
 const passport = require("passport");
 const expressSession = require("express-session");
@@ -72,6 +73,7 @@ app.use("/api/combo", comboRouter);
 app.use("/api/handicap", handicapRouter);
 app.use("/api/roi", roiRouter);
 app.use('/api/accuracy', accuracyRouter);
+app.use('/api/admin', adminRouter);
 
 // Global Error Handler
 app.use(globalErrorHandler);
