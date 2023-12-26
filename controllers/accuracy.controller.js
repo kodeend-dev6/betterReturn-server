@@ -23,6 +23,11 @@ const getAccuracy = catchAsync(async (req, res) => {
         },
     });
 
+    const soccerTargetDate = new Date(soccerResponse.data.records[soccerResponse?.data?.records?.length - 1].fields?.Date);
+    const currentDate = new Date();
+    const soccerTimeDifference = currentDate.getTime() - soccerTargetDate.getTime();
+    const soccerDays = Math.ceil(soccerTimeDifference / (1000 * 3600 * 24));
+
     const soccerWinMatches = soccerResponse.data.records?.filter(item => item.fields.Results === 'TRUE')
     let soccerTotalOdds = 0;
     for (let i = 0; i < soccerWinMatches.length; i++) {
@@ -32,7 +37,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     const soccerLost = soccerResponse.data.records.length - soccerWin;
     const soccerAverageOdds = (soccerTotalOdds / soccerWinMatches?.length).toFixed(2);
 
-    const soccerData = { soccerLost, soccerWin, soccerAverageOdds, total: soccerLost + soccerWin }
+    const soccerData = { soccerLost, soccerWin, soccerAverageOdds, soccerDays, total: soccerLost + soccerWin }
 
 
     const handicapResponse = await axios.get(handicapTable, {
@@ -80,8 +85,12 @@ const getAccuracy = catchAsync(async (req, res) => {
         }
     }
 
+    const handicapTargetDate = new Date(handicapResponse.data.records[handicapResponse?.data?.records?.length - 1].fields?.Date);
+    const handicapTimeDifference = currentDate.getTime() - handicapTargetDate.getTime();
+    const handicapDays = Math.ceil(handicapTimeDifference / (1000 * 3600 * 24));
+
     const handicapAverageOdds = (handicapTotalOdds / handicapWin).toFixed(2);
-    const handicapData = { handicapLost, handicapWin, handicapAverageOdds, total: handicapLost + handicapWin };
+    const handicapData = { handicapLost, handicapWin, handicapAverageOdds, handicapDays, total: handicapLost + handicapWin };
 
     let data = {
         soccerData,
