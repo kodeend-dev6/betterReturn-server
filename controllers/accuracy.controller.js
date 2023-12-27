@@ -14,7 +14,6 @@ const getAccuracy = catchAsync(async (req, res) => {
     const { days } = req.query;
 
     const today = new Date();
-    const formattedToday = today.toISOString().split('T')[0];
 
     const allSoccerData = [];
 
@@ -62,46 +61,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     const soccerData = { soccerWin, soccerLost, soccerAverageOdds, soccerDays: days, winParc, total: soccerTotal }
 
 
-    // const soccerResponse = await axios.get(soccerTable, {
-    //     headers: { Authorization: `Bearer ${apiKey}` },
-    //     params: {
-    //         fields: ["Results", "Date", "PredictedOdds"],
-    //         filterByFormula: `AND(
-    //             NOT({MatchResults} = BLANK()),
-    //             {Date} <= '${formattedToday}',
-    //             {upload}=1)`,
-    //         sort: [{ field: 'Date', direction: 'desc' }]
-    //     },
-    // });
-
-    // const soccerTargetDate = new Date(soccerResponse.data.records[soccerResponse?.data?.records?.length - 1].fields?.Date);
-    // const currentDate = new Date();
-    // const soccerTimeDifference = currentDate.getTime() - soccerTargetDate.getTime();
-    // const soccerDays = Math.ceil(soccerTimeDifference / (1000 * 3600 * 24));
-
-    // const soccerWinMatches = soccerResponse.data.records?.filter(item => item.fields.Results === 'TRUE')
-    // let soccerTotalOdds = 0;
-    // for (let i = 0; i < soccerWinMatches.length; i++) {
-    //     soccerTotalOdds += soccerWinMatches[i].fields.PredictedOdds;
-    // }
-    // const soccerWin = soccerWinMatches.length;
-    // const soccerLost = soccerResponse.data.records.length - soccerWin;
-    // const soccerAverageOdds = (soccerTotalOdds / soccerWinMatches?.length).toFixed(2);
-
-    // const soccerData = { soccerLost, soccerWin, soccerAverageOdds, soccerDays, total: soccerLost + soccerWin }
-
-
-    // const handicapResponse = await axios.get(handicapTable, {
-    //     headers: { Authorization: `Bearer ${apiKey}` },
-    //     params: {
-    //         filterByFormula: `AND({Date} <= '${formattedToday}',
-    //                          NOT({T1CornerResult} = BLANK()),
-    //                          {upload}=1)`,
-    //         sort: [{ field: 'Date', direction: 'desc' }]
-    //     },
-    // })
-
-
+    // handicap part
     const allHandicapData = [];
     for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
         const startDay = i;
@@ -165,9 +125,11 @@ const getAccuracy = catchAsync(async (req, res) => {
         }
     }
 
+    const handicapTotal = handicapWin + handicapLost;
 
+    const handicapWinParc = (handicapWin / handicapTotal * 100).toFixed(2);
     const handicapAverageOdds = (handicapTotalOdds / handicapWin).toFixed(2);
-    const handicapData = { handicapLost, handicapWin, handicapAverageOdds, handicapDays: days, total: handicapLost + handicapWin };
+    const handicapData = { handicapLost, handicapWin, handicapAverageOdds, handicapDays: days, winParc: handicapWinParc, total: handicapTotal };
 
     let data = {
         soccerData,
