@@ -1,8 +1,76 @@
+const axios = require('axios')
 const config = require("../config/config");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
 const fetcher = require("../utils/fetcher/airTableFetcher");
 const soccerTable = config.db.soccerTableUrl;
+const apiKey = config.key.apiKey
+
+const DAYS_PER_REQUEST = 10;
+
+
+
+const groupDataByWeek = (data) => {
+  const groupedByWeek = {};
+  data.forEach((record) => {
+    const date = new Date(record.fields.Date);
+    const year = date.getFullYear();
+    const weekNumber = getWeekNumber(date);
+
+    const key = `${year}-W${weekNumber}`;
+    if (!groupedByWeek[key]) {
+      groupedByWeek[key] = { days: {} };
+    }
+
+    // Group data by Day inside each Week
+    const dayKey = date.toISOString().split('T')[0];
+    if (!groupedByWeek[key].days[dayKey]) {
+      groupedByWeek[key].days[dayKey] = [];
+    }
+    groupedByWeek[key].days[dayKey].push(record);
+  });
+
+  return groupedByWeek;
+};
+
+// Function to group data by Month
+const groupDataByMonth = (data) => {
+  const groupedByMonth = {};
+  data.forEach((record) => {
+    const date = new Date(record.fields.Date);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const key = `${year}-${month < 10 ? '0' : ''}${month}`;
+    if (!groupedByMonth[key]) {
+      groupedByMonth[key] = { matches: [], accuracy: 0 };
+    }
+    groupedByMonth[key].matches.push(record);
+
+    // Calculate accuracy for the month
+    if (record.fields.Results === 'TRUE') {
+      groupedByMonth[key].accuracy += 1;
+    }
+  });
+
+  // Calculate accuracy percentage for each month
+  Object.keys(groupedByMonth).forEach((month) => {
+    const totalMatches = groupedByMonth[month].matches.length;
+    groupedByMonth[month].accuracy = ((groupedByMonth[month].accuracy / totalMatches) * 100).toFixed(2);
+  });
+  return groupedByMonth;
+};
+
+// Get ISO week number from date
+function getWeekNumber(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+
+
 
 const getRoi = catchAsync(async (req, res) => {
   const { startDate, endDate, initialBalance, percent, filter } = req.query;
@@ -46,9 +114,9 @@ const getRoi = catchAsync(async (req, res) => {
               finalBalance -
               finalBalance * percentInvestment +
               avgOdds *
-                (winM / records.length) *
-                finalBalance *
-                percentInvestment;
+              (winM / records.length) *
+              finalBalance *
+              percentInvestment;
           }
         }
 
@@ -119,9 +187,9 @@ const getRoi = catchAsync(async (req, res) => {
               finalBalance -
               finalBalance * percentInvestment +
               avgOdds *
-                (winM / records.length) *
-                finalBalance *
-                percentInvestment;
+              (winM / records.length) *
+              finalBalance *
+              percentInvestment;
           }
         }
 
@@ -154,33 +222,73 @@ const getRoi = catchAsync(async (req, res) => {
   }
 });
 
-// Get Soccer ROI
 const getSoccerRoi = catchAsync(async (req, res) => {
-  const { type, year, weekNumber } = req.query;
-  const initialBalance = 1000;
+  try {
+    const { year } = req.query;
+    const startDate = new Date(year, 11, 1); // Start date of the year
+    const endDate = new Date(year, 11, 31); // End date of the year
 
-  const result = await fetcher.get(soccerTable, {
-    params: {
-      fields: ["Results", "PredictedOdds"],
-      filterByFormula: `AND({upload} = 1, NOT({MatchResults} = ''))`,
-      sort: [{ field: "Date", direction: "asc" }],
-    },
-  });
+    const allData = [];
 
-  if (type === "weekly") {
-    // Get weekly ROI
+    for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + DAYS_PER_REQUEST)) {
+      const formattedStartDate = currentDate.toISOString().split('T')[0];
+      const nextDate = new Date(currentDate);
+      nextDate.setDate(nextDate.getDate() + DAYS_PER_REQUEST - 1);
+      const formattedEndDate = nextDate <= endDate ? nextDate.toISOString().split('T')[0] : endDate.toISOString().split('T')[0];
+
+      const response = await axios.get(soccerTable, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        params: {
+          fields: ['Date', 'Results', 'PredictedOdds'],
+          filterByFormula: `AND(
+            NOT({MatchResults} = BLANK()),
+            NOT({Prediction} = BLANK()),
+            {Date} >= '${formattedStartDate}',
+            {Date} <= '${formattedEndDate}'
+          )`,
+          sort: [{ field: 'Date', direction: 'asc' }]
+        },
+      });
+
+      allData.push(...response.data.records);
+    }
+
+
+    const dataGroupedByWeek = groupDataByWeek(allData);
+    // const dataGroupedByMonth = groupDataByMonth(allData);
+
+
+    // Object.entries(dataGroupedByWeek).forEach(([key, value]) => {
+    //   console.log(value)
+    // })
+
+    Object.entries(dataGroupedByWeek).map(([key, value]) => {
+      console.log(key)
+    })
+
+
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Get Dashboard data Successful",
+      data: {
+        dataGroupedByWeek,
+        // dataGroupedByMonth
+      },
+      meta: {
+        total: allData?.length || 0
+      }
+    });
+  } catch (error) {
+    sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: "Error in fetching admin dashboard data",
+      error: error.message
+    });
   }
-
-  if (type === "monthly") {
-    // Get monthly ROI
-  }
-
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Retrieved Soccer ROI calculation",
-    data: { type, year, weekNumber },
-  });
 });
+
 
 module.exports = { getRoi, getSoccerRoi };

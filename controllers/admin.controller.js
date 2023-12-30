@@ -10,13 +10,13 @@ const DAYS_PER_REQUEST = 10;
 const groupDataByDate = (data) => {
     const groupedByDate = {};
     data.forEach((record) => {
-        const date = new Date(record.fields.Date).toISOString().split('T')[0]; // Extracting date
+        const date = new Date(record.fields.Date).toISOString().split('T')[0];
         if (!groupedByDate[date]) {
             groupedByDate[date] = { matches: [], accuracy: 0 };
         }
         groupedByDate[date].matches.push(record);
 
-        // Calculate accuracy for the day
+        
         if (record.fields.Results === 'TRUE') {
             groupedByDate[date].accuracy += 1;
         }
