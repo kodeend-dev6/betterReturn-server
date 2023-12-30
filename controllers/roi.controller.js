@@ -8,10 +8,93 @@ const apiKey = config.key.apiKey
 
 const DAYS_PER_REQUEST = 10;
 
+const calculateROIForWeek = (weekData) => {
+  let initialBalance = 1000;
+  const percent = 15;
+  let finalBalance = initialBalance;
+  const dataArray = [];
 
+  Object.keys(weekData).forEach((dayKey) => {
+    const records = weekData[dayKey];
+    const percentInvestment = percent / 100;
+
+
+    let winOdds = 0;
+    let winM = 0;
+
+    records.forEach((record) => {
+      if (record.fields.Results === "TRUE") {
+        winOdds += record.fields.PredictedOdds || 0;
+        winM++;
+      }
+    });
+
+    if (winM > 0) {
+      const avgOdds = winOdds / winM;
+      finalBalance =
+        finalBalance -
+        finalBalance * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalance * percentInvestment;
+    }
+    dataArray.push({
+      date: dayKey,
+      finalBalance: Number(finalBalance).toFixed(2),
+    });
+  });
+
+  return {
+    roi: finalBalance,
+    dataArray,
+  };
+};
+
+const calculateROIForMonth = (monthData) => {
+  let initialBalance = 1000; // Initial investment
+  const percent = 15; // Percentage to invest
+  let finalBalance = initialBalance;
+  const dataArray = [];
+
+  Object.keys(monthData).forEach((dayKey) => {
+    const records = monthData[dayKey];
+    const percentInvestment = percent / 100;
+
+    // Your existing ROI calculation logic based on records for the day within the month
+    // Example calculation logic:
+
+    let winOdds = 0;
+    let winM = 0;
+
+    records.forEach((record) => {
+      if (record.fields.Results === 'TRUE') {
+        winOdds += record.fields.PredictedOdds || 0;
+        winM++;
+      }
+    });
+
+    if (winM > 0) {
+      const avgOdds = winOdds / winM;
+      finalBalance =
+        finalBalance -
+        finalBalance * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalance * percentInvestment;
+    }
+
+    // Push date and finalBalance into dataArray as an object
+    dataArray.push({
+      date: dayKey,
+      finalBalance: Number(finalBalance).toFixed(2),
+    });
+  });
+
+  return {
+    roi: finalBalance,
+    dataArray,
+  };
+};
 
 const groupDataByWeek = (data) => {
   const groupedByWeek = {};
+
   data.forEach((record) => {
     const date = new Date(record.fields.Date);
     const year = date.getFullYear();
@@ -19,7 +102,8 @@ const groupDataByWeek = (data) => {
 
     const key = `${year}-W${weekNumber}`;
     if (!groupedByWeek[key]) {
-      groupedByWeek[key] = { days: {} };
+      groupedByWeek[key] = {};
+      groupedByWeek[key].days = {};
     }
 
     // Group data by Day inside each Week
@@ -30,33 +114,38 @@ const groupDataByWeek = (data) => {
     groupedByWeek[key].days[dayKey].push(record);
   });
 
+  // Calculate ROI for each week
+  Object.keys(groupedByWeek).forEach((weekKey) => {
+    groupedByWeek[weekKey] = calculateROIForWeek(groupedByWeek[weekKey].days);
+  });
+
   return groupedByWeek;
 };
 
-// Function to group data by Month
+
 const groupDataByMonth = (data) => {
   const groupedByMonth = {};
+
   data.forEach((record) => {
     const date = new Date(record.fields.Date);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const key = `${year}-${month < 10 ? '0' : ''}${month}`;
     if (!groupedByMonth[key]) {
-      groupedByMonth[key] = { matches: [], accuracy: 0 };
+      groupedByMonth[key] = { days: {} };
     }
-    groupedByMonth[key].matches.push(record);
 
-    // Calculate accuracy for the month
-    if (record.fields.Results === 'TRUE') {
-      groupedByMonth[key].accuracy += 1;
+    const dayKey = date.toISOString().split('T')[0];
+    if (!groupedByMonth[key].days[dayKey]) {
+      groupedByMonth[key].days[dayKey] = [];
     }
+    groupedByMonth[key].days[dayKey].push(record);
   });
 
-  // Calculate accuracy percentage for each month
-  Object.keys(groupedByMonth).forEach((month) => {
-    const totalMatches = groupedByMonth[month].matches.length;
-    groupedByMonth[month].accuracy = ((groupedByMonth[month].accuracy / totalMatches) * 100).toFixed(2);
+  Object.keys(groupedByMonth).forEach((monthKey) => {
+    groupedByMonth[monthKey] = calculateROIForMonth(groupedByMonth[monthKey].days);
   });
+
   return groupedByMonth;
 };
 
@@ -225,8 +314,8 @@ const getRoi = catchAsync(async (req, res) => {
 const getSoccerRoi = catchAsync(async (req, res) => {
   try {
     const { year } = req.query;
-    const startDate = new Date(year, 11, 1); // Start date of the year
-    const endDate = new Date(year, 11, 31); // End date of the year
+    const startDate = new Date(year, 11, 1);
+    const endDate = new Date(year, 11, 31);
 
     const allData = [];
 
@@ -255,16 +344,7 @@ const getSoccerRoi = catchAsync(async (req, res) => {
 
 
     const dataGroupedByWeek = groupDataByWeek(allData);
-    // const dataGroupedByMonth = groupDataByMonth(allData);
-
-
-    // Object.entries(dataGroupedByWeek).forEach(([key, value]) => {
-    //   console.log(value)
-    // })
-
-    Object.entries(dataGroupedByWeek).map(([key, value]) => {
-      console.log(key)
-    })
+    const dataGroupedByMonth = groupDataByMonth(allData);
 
 
 
@@ -274,7 +354,7 @@ const getSoccerRoi = catchAsync(async (req, res) => {
       message: "Get Dashboard data Successful",
       data: {
         dataGroupedByWeek,
-        // dataGroupedByMonth
+        dataGroupedByMonth
       },
       meta: {
         total: allData?.length || 0
