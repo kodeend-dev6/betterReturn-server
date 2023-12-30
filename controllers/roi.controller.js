@@ -159,8 +159,6 @@ function getWeekNumber(date) {
 }
 
 
-
-
 const getRoi = catchAsync(async (req, res) => {
   const { startDate, endDate, initialBalance, percent, filter } = req.query;
 
@@ -313,9 +311,21 @@ const getRoi = catchAsync(async (req, res) => {
 
 const getSoccerRoi = catchAsync(async (req, res) => {
   try {
-    const { year } = req.query;
-    const startDate = new Date(year, 11, 1);
-    const endDate = new Date(year, 11, 31);
+    const { year, type, weekNumber } = req.query;
+    let startDate;
+    let endDate;
+
+    if (type === 'weekly') {
+      startDate = new Date(year, 0, 1); // January 1st of the year
+      const firstDayOfYear = startDate.getDay(); // Day of the week (0 - 6)
+
+      // Calculate the first day of the specified week
+      startDate.setDate(startDate.getDate() + (7 * (weekNumber - 1)) - firstDayOfYear);
+
+      // Calculate the last day of the specified week (assuming weeks start on Monday and end on Sunday)
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+    }
 
     const allData = [];
 
@@ -342,18 +352,23 @@ const getSoccerRoi = catchAsync(async (req, res) => {
       allData.push(...response.data.records);
     }
 
-
     const dataGroupedByWeek = groupDataByWeek(allData);
     const dataGroupedByMonth = groupDataByMonth(allData);
 
-
+    // Filter data only for the requested weekNumber
+    const filteredDataByWeek = Object.keys(dataGroupedByWeek).reduce((filtered, key) => {
+      if (key.includes(`-W${weekNumber}`)) {
+        filtered[key] = dataGroupedByWeek[key];
+      }
+      return filtered;
+    }, {});
 
     sendResponse(res, {
       statusCode: 200,
       success: true,
       message: "Get Dashboard data Successful",
       data: {
-        dataGroupedByWeek,
+        dataGroupedByWeek: filteredDataByWeek,
         dataGroupedByMonth
       },
       meta: {
@@ -369,6 +384,7 @@ const getSoccerRoi = catchAsync(async (req, res) => {
     });
   }
 });
+
 
 
 module.exports = { getRoi, getSoccerRoi };
