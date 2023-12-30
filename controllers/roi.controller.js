@@ -1,10 +1,10 @@
-const axios = require('axios')
+const axios = require("axios");
 const config = require("../config/config");
 const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
 const fetcher = require("../utils/fetcher/airTableFetcher");
 const soccerTable = config.db.soccerTableUrl;
-const apiKey = config.key.apiKey
+const apiKey = config.key.apiKey;
 
 const DAYS_PER_REQUEST = 10;
 
@@ -17,7 +17,6 @@ const calculateROIForWeek = (weekData) => {
   Object.keys(weekData).forEach((dayKey) => {
     const records = weekData[dayKey];
     const percentInvestment = percent / 100;
-
 
     let winOdds = 0;
     let winM = 0;
@@ -65,7 +64,7 @@ const calculateROIForMonth = (monthData) => {
     let winM = 0;
 
     records.forEach((record) => {
-      if (record.fields.Results === 'TRUE') {
+      if (record.fields.Results === "TRUE") {
         winOdds += record.fields.PredictedOdds || 0;
         winM++;
       }
@@ -107,7 +106,7 @@ const groupDataByWeek = (data) => {
     }
 
     // Group data by Day inside each Week
-    const dayKey = date.toISOString().split('T')[0];
+    const dayKey = date.toISOString().split("T")[0];
     if (!groupedByWeek[key].days[dayKey]) {
       groupedByWeek[key].days[dayKey] = [];
     }
@@ -122,7 +121,6 @@ const groupDataByWeek = (data) => {
   return groupedByWeek;
 };
 
-
 const groupDataByMonth = (data) => {
   const groupedByMonth = {};
 
@@ -130,12 +128,12 @@ const groupDataByMonth = (data) => {
     const date = new Date(record.fields.Date);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
-    const key = `${year}-${month < 10 ? '0' : ''}${month}`;
+    const key = `${year}-${month < 10 ? "0" : ""}${month}`;
     if (!groupedByMonth[key]) {
       groupedByMonth[key] = { days: {} };
     }
 
-    const dayKey = date.toISOString().split('T')[0];
+    const dayKey = date.toISOString().split("T")[0];
     if (!groupedByMonth[key].days[dayKey]) {
       groupedByMonth[key].days[dayKey] = [];
     }
@@ -143,7 +141,9 @@ const groupDataByMonth = (data) => {
   });
 
   Object.keys(groupedByMonth).forEach((monthKey) => {
-    groupedByMonth[monthKey] = calculateROIForMonth(groupedByMonth[monthKey].days);
+    groupedByMonth[monthKey] = calculateROIForMonth(
+      groupedByMonth[monthKey].days
+    );
   });
 
   return groupedByMonth;
@@ -153,11 +153,13 @@ const groupDataByMonth = (data) => {
 function getWeekNumber(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
   const week1 = new Date(d.getFullYear(), 0, 4);
-  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  return (
+    1 +
+    Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
+  );
 }
-
 
 const getRoi = catchAsync(async (req, res) => {
   const { startDate, endDate, initialBalance, percent, filter } = req.query;
@@ -201,9 +203,9 @@ const getRoi = catchAsync(async (req, res) => {
               finalBalance -
               finalBalance * percentInvestment +
               avgOdds *
-              (winM / records.length) *
-              finalBalance *
-              percentInvestment;
+                (winM / records.length) *
+                finalBalance *
+                percentInvestment;
           }
         }
 
@@ -274,9 +276,9 @@ const getRoi = catchAsync(async (req, res) => {
               finalBalance -
               finalBalance * percentInvestment +
               avgOdds *
-              (winM / records.length) *
-              finalBalance *
-              percentInvestment;
+                (winM / records.length) *
+                finalBalance *
+                percentInvestment;
           }
         }
 
@@ -311,41 +313,57 @@ const getRoi = catchAsync(async (req, res) => {
 
 const getSoccerRoi = catchAsync(async (req, res) => {
   try {
-    const { year, type, weekNumber } = req.query;
+    const { year, type, weekNumber, monthNumber } = req.query;
     let startDate;
     let endDate;
 
-    if (type === 'weekly') {
-      startDate = new Date(year, 0, 1); // January 1st of the year
-      const firstDayOfYear = startDate.getDay(); // Day of the week (0 - 6)
+    if (type === "weekly") {
+      const firstDayOfWeek = weekNumber
+        ? new Date(year, 0, 1 + (weekNumber - 1) * 7)
+        : new Date(year, 11, 1);
 
-      // Calculate the first day of the specified week
-      startDate.setDate(startDate.getDate() + (7 * (weekNumber - 1)) - firstDayOfYear);
+      const lastDayOfWeek = weekNumber
+        ? new Date(year, 0, 7 * weekNumber)
+        : new Date(year, 11, 31);
 
-      // Calculate the last day of the specified week (assuming weeks start on Monday and end on Sunday)
-      endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 6);
+      startDate = firstDayOfWeek;
+      endDate = lastDayOfWeek;
+    } else if (type === "monthly") {
+      if (monthNumber) {
+        startDate = new Date(year, monthNumber - 1, 1);
+        endDate = new Date(year, monthNumber, 0);
+      } else {
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 11, 31);
+      }
     }
 
     const allData = [];
 
-    for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + DAYS_PER_REQUEST)) {
-      const formattedStartDate = currentDate.toISOString().split('T')[0];
+    for (
+      let currentDate = new Date(startDate);
+      currentDate <= endDate;
+      currentDate.setDate(currentDate.getDate() + DAYS_PER_REQUEST)
+    ) {
+      const formattedStartDate = currentDate.toISOString().split("T")[0];
       const nextDate = new Date(currentDate);
       nextDate.setDate(nextDate.getDate() + DAYS_PER_REQUEST - 1);
-      const formattedEndDate = nextDate <= endDate ? nextDate.toISOString().split('T')[0] : endDate.toISOString().split('T')[0];
+      const formattedEndDate =
+        nextDate <= endDate
+          ? nextDate.toISOString().split("T")[0]
+          : endDate.toISOString().split("T")[0];
 
       const response = await axios.get(soccerTable, {
         headers: { Authorization: `Bearer ${apiKey}` },
         params: {
-          fields: ['Date', 'Results', 'PredictedOdds'],
+          fields: ["Date", "Results", "PredictedOdds"],
           filterByFormula: `AND(
             NOT({MatchResults} = BLANK()),
             NOT({Prediction} = BLANK()),
             {Date} >= '${formattedStartDate}',
             {Date} <= '${formattedEndDate}'
           )`,
-          sort: [{ field: 'Date', direction: 'asc' }]
+          sort: [{ field: "Date", direction: "asc" }],
         },
       });
 
@@ -356,35 +374,48 @@ const getSoccerRoi = catchAsync(async (req, res) => {
     const dataGroupedByMonth = groupDataByMonth(allData);
 
     // Filter data only for the requested weekNumber
-    const filteredDataByWeek = Object.keys(dataGroupedByWeek).reduce((filtered, key) => {
-      if (key.includes(`-W${weekNumber}`)) {
-        filtered[key] = dataGroupedByWeek[key];
-      }
-      return filtered;
-    }, {});
+    const filteredDataByWeek = Object.keys(dataGroupedByWeek).reduce(
+      (filtered, key) => {
+        if (key.includes(`-W${weekNumber}`)) {
+          filtered[key] = dataGroupedByWeek[key];
+        }
+        return filtered;
+      },
+      {}
+    );
+
+    const filteredDataByMonth = Object.keys(dataGroupedByMonth).reduce(
+      (filtered, key) => {
+        if (key.includes(`-${monthNumber < 10 ? "0" : ""}${monthNumber}`)) {
+          filtered[key] = dataGroupedByMonth[key];
+        }
+        return filtered;
+      },
+      {}
+    );
 
     sendResponse(res, {
       statusCode: 200,
       success: true,
       message: "Get Dashboard data Successful",
       data: {
-        dataGroupedByWeek: filteredDataByWeek,
-        dataGroupedByMonth
+        dataGroupedByWeek: weekNumber ? filteredDataByWeek : dataGroupedByWeek,
+        dataGroupedByMonth: monthNumber
+          ? filteredDataByMonth
+          : dataGroupedByMonth,
       },
       meta: {
-        total: allData?.length || 0
-      }
+        total: allData?.length || 0,
+      },
     });
   } catch (error) {
     sendResponse(res, {
       statusCode: 500,
       success: false,
       message: "Error in fetching admin dashboard data",
-      error: error.message
+      error: error.message,
     });
   }
 });
-
-
 
 module.exports = { getRoi, getSoccerRoi };
