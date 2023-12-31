@@ -9,10 +9,13 @@ const apiKey = config.key.apiKey;
 const DAYS_PER_REQUEST = 10;
 
 const calculateROIForWeek = (weekData) => {
-  let initialBalance = 1000;
   const percent = 15;
-  let finalBalance = initialBalance;
+  let finalBalanceForOneThousand = 1000;
+  let finalBalanceForThreeThousand = 3000;
+  let finalBalanceForFiveThousand = 5000;
   const dataArray = [];
+  let totalMatch = 0;
+  let winMatch = 0;
 
   Object.keys(weekData).forEach((dayKey) => {
     const records = weekData[dayKey];
@@ -22,36 +25,56 @@ const calculateROIForWeek = (weekData) => {
     let winM = 0;
 
     records.forEach((record) => {
+      totalMatch++;
       if (record.fields.Results === "TRUE") {
         winOdds += record.fields.PredictedOdds || 0;
         winM++;
+        winMatch++;
       }
     });
 
     if (winM > 0) {
       const avgOdds = winOdds / winM;
-      finalBalance =
-        finalBalance -
-        finalBalance * percentInvestment +
-        avgOdds * (winM / records.length) * finalBalance * percentInvestment;
+      finalBalanceForOneThousand =
+        finalBalanceForOneThousand -
+        finalBalanceForOneThousand * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalanceForOneThousand * percentInvestment;
+
+      finalBalanceForThreeThousand =
+        finalBalanceForThreeThousand -
+        finalBalanceForThreeThousand * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalanceForThreeThousand * percentInvestment;
+
+      finalBalanceForFiveThousand =
+        finalBalanceForFiveThousand -
+        finalBalanceForFiveThousand * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalanceForFiveThousand * percentInvestment;
     }
     dataArray.push({
       date: dayKey,
-      finalBalance: Number(finalBalance).toFixed(2),
+      finalBalance: Number(finalBalanceForOneThousand).toFixed(2),
+      finalBalanceForThreeThousand: Number(finalBalanceForThreeThousand).toFixed(2),
+      finalBalanceForFiveThousand: Number(finalBalanceForFiveThousand).toFixed(2),
     });
   });
 
   return {
-    roi: finalBalance,
+    roi: finalBalanceForOneThousand,
+    roiForThreeThousand: finalBalanceForThreeThousand,
+    roiForFiveThousand: finalBalanceForFiveThousand,
+    winParc: Number(winMatch / totalMatch * 100).toFixed(2),
     dataArray,
   };
 };
 
 const calculateROIForMonth = (monthData) => {
-  let initialBalance = 1000; // Initial investment
-  const percent = 15; // Percentage to invest
-  let finalBalance = initialBalance;
+  const percent = 15;
+  let finalBalanceForOneThousand = 1000;
+  let finalBalanceForThreeThousand = 3000;
+  let finalBalanceForFiveThousand = 5000;
   const dataArray = [];
+  let totalMatch = 0;
+  let winMatch = 0;
 
   Object.keys(monthData).forEach((dayKey) => {
     const records = monthData[dayKey];
@@ -64,29 +87,46 @@ const calculateROIForMonth = (monthData) => {
     let winM = 0;
 
     records.forEach((record) => {
+      totalMatch++;
       if (record.fields.Results === "TRUE") {
         winOdds += record.fields.PredictedOdds || 0;
         winM++;
+        winMatch++;
       }
     });
 
     if (winM > 0) {
       const avgOdds = winOdds / winM;
-      finalBalance =
-        finalBalance -
-        finalBalance * percentInvestment +
-        avgOdds * (winM / records.length) * finalBalance * percentInvestment;
+      finalBalanceForOneThousand =
+        finalBalanceForOneThousand -
+        finalBalanceForOneThousand * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalanceForOneThousand * percentInvestment;
+
+      finalBalanceForThreeThousand =
+        finalBalanceForThreeThousand -
+        finalBalanceForThreeThousand * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalanceForThreeThousand * percentInvestment;
+
+      finalBalanceForFiveThousand =
+        finalBalanceForFiveThousand -
+        finalBalanceForFiveThousand * percentInvestment +
+        avgOdds * (winM / records.length) * finalBalanceForFiveThousand * percentInvestment;
     }
 
     // Push date and finalBalance into dataArray as an object
     dataArray.push({
       date: dayKey,
-      finalBalance: Number(finalBalance).toFixed(2),
+      finalBalance: Number(finalBalanceForOneThousand).toFixed(2),
+      finalBalanceForThreeThousand: Number(finalBalanceForThreeThousand).toFixed(2),
+      finalBalanceForFiveThousand: Number(finalBalanceForFiveThousand).toFixed(2),
     });
   });
 
   return {
-    roi: finalBalance,
+    roi: finalBalanceForOneThousand,
+    roiForThreeThousand: finalBalanceForThreeThousand,
+    roiForFiveThousand: finalBalanceForFiveThousand,
+    winParc: Number(winMatch / totalMatch * 100).toFixed(2),
     dataArray,
   };
 };
@@ -203,9 +243,9 @@ const getRoi = catchAsync(async (req, res) => {
               finalBalance -
               finalBalance * percentInvestment +
               avgOdds *
-                (winM / records.length) *
-                finalBalance *
-                percentInvestment;
+              (winM / records.length) *
+              finalBalance *
+              percentInvestment;
           }
         }
 
@@ -276,9 +316,9 @@ const getRoi = catchAsync(async (req, res) => {
               finalBalance -
               finalBalance * percentInvestment +
               avgOdds *
-                (winM / records.length) *
-                finalBalance *
-                percentInvestment;
+              (winM / records.length) *
+              finalBalance *
+              percentInvestment;
           }
         }
 
