@@ -1,8 +1,12 @@
 const fetcher = require("../../utils/fetcher/airTableFetcher");
 const config = require("../../config/config");
+const { findUser } = require("../user.helper");
 
 const deletedSubscriptionToDB = async (subscription) => {
-  const airtableURL = `${config.db.userTableUrl}/${subscription?.customer?.email}`;
+  const user = await findUser(subscription?.customer?.email, {
+    throwError: true,
+  });
+  const airtableURL = `${config.db.userTableUrl}/${user?.id}`;
 
   const data = {
     fields: {
