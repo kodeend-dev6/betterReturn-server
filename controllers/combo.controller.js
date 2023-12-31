@@ -254,6 +254,8 @@ const getAllComboV2 = catchAsync(async (req, res) => {
           "Prediction",
           "T1Logo",
           "T2Logo",
+          "LeagueName",
+          "Venue",
         ],
         filterByFormula: `AND({Date} = '${date}', {Combo} = ${i + 1})`,
       },
