@@ -248,29 +248,32 @@ const getAllComboV2 = catchAsync(async (req, res) => {
           "HomeOdds",
           "AwayOdds",
           "DrawOdds",
+          "PredictedOdds",
           "MatchResults",
           "Results",
           "Prediction",
+          "T1Logo",
+          "T2Logo",
         ],
         filterByFormula: `AND({Date} = '${date}', {Combo} = ${i + 1})`,
       },
     });
 
-    const csgoResult = await fetcher.get(config.db.csgoTableUrl, {
-      params: {
-        filterByFormula: `AND({Date} = '${date}', {Combo} = ${i + 1})`,
-      },
-    });
+    // const csgoResult = await fetcher.get(config.db.csgoTableUrl, {
+    //   params: {
+    //     filterByFormula: `AND({Date} = '${date}', {Combo} = ${i + 1})`,
+    //   },
+    // });
 
-    const valorantResult = await fetcher.get(config.db.valorantTableUrl, {
-      params: {
-        filterByFormula: `AND({Date} = '${date}', {Combo} = ${i + 1})`,
-      },
-    });
+    // const valorantResult = await fetcher.get(config.db.valorantTableUrl, {
+    //   params: {
+    //     filterByFormula: `AND({Date} = '${date}', {Combo} = ${i + 1})`,
+    //   },
+    // });
 
     const soccerData = soccerResult?.data?.records;
-    const csgoData = csgoResult?.data?.records;
-    const valorantData = valorantResult?.data?.records;
+    // const csgoData = csgoResult?.data?.records;
+    // const valorantData = valorantResult?.data?.records;
 
     //  use a loop to get the data
     if (soccerData?.length) {
@@ -287,33 +290,33 @@ const getAllComboV2 = catchAsync(async (req, res) => {
       }
     }
 
-    if (csgoData?.length) {
-      for (let c = 0; c < csgoData?.length; c++) {
-        const csgoNewData = {
-          name: "csgo",
-          data: {
-            recordId: csgoData[c]?.id,
-            ...csgoData[c]?.fields,
-          },
-        };
+    // if (csgoData?.length) {
+    //   for (let c = 0; c < csgoData?.length; c++) {
+    //     const csgoNewData = {
+    //       name: "csgo",
+    //       data: {
+    //         recordId: csgoData[c]?.id,
+    //         ...csgoData[c]?.fields,
+    //       },
+    //     };
 
-        newCombo.push(csgoNewData);
-      }
-    }
+    //     newCombo.push(csgoNewData);
+    //   }
+    // }
 
-    if (valorantData?.length) {
-      for (let v = 0; v < valorantData?.length; v++) {
-        const valorantNewData = {
-          name: "valorant",
-          data: {
-            recordId: valorantData[v]?.id,
-            ...valorantData[v]?.fields,
-          },
-        };
+    // if (valorantData?.length) {
+    //   for (let v = 0; v < valorantData?.length; v++) {
+    //     const valorantNewData = {
+    //       name: "valorant",
+    //       data: {
+    //         recordId: valorantData[v]?.id,
+    //         ...valorantData[v]?.fields,
+    //       },
+    //     };
 
-        newCombo.push(valorantNewData);
-      }
-    }
+    //     newCombo.push(valorantNewData);
+    //   }
+    // }
 
     newCombo?.length ? data.push(newCombo) : null;
   }
