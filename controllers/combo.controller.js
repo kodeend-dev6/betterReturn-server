@@ -340,6 +340,7 @@ const getAllComboV2 = catchAsync(async (req, res) => {
     const date = req.query.date;
     const finished = req.query.finished;
     const data = [];
+    let finishedCombo = [];
 
     const fetchPromises = [];
     let filter = ({ combo }) => {
@@ -374,6 +375,7 @@ const getAllComboV2 = catchAsync(async (req, res) => {
                 "T2Logo",
                 "LeagueName",
                 "Venue",
+                "Combo",
               ],
               filterByFormula: filter({ combo: i + 1 }),
             },
@@ -421,13 +423,45 @@ const getAllComboV2 = catchAsync(async (req, res) => {
       }
     });
 
+    if (finished) {
+      const allData = data.flat().sort((a, b) => {
+        const dateA = new Date(a?.data?.Date);
+        const dateB = new Date(b?.data?.Date);
+    
+        return dateB - dateA;
+      });
+    
+      // Use a Set to keep track of unique date and combo combinations
+      const uniqueCombinations = new Set();
+    
+      for (let i = 0; i < allData.length; i++) {
+        const date = allData[i]?.data?.Date;
+        const combo = allData[i]?.data?.Combo;
+    
+        // Create a unique key for each combination
+        const key = `${date}-${combo}`;
+    
+        // Check if the combination is not already in the Set
+        if (!uniqueCombinations.has(key)) {
+          // Push the data for the unique combination
+          finishedCombo.push(allData.filter(
+            (item) => item?.data?.Date === date && item?.data?.Combo === combo
+          ));
+    
+          // Add the combination to the Set
+          uniqueCombinations.add(key);
+        }
+      }
+    }
+    
+
     sendResponse(res, {
       success: true,
       statusCode: 200,
       message: "Retrieved all combo successfully!",
-      data,
+      data: finished ? finishedCombo : data,
       meta: {
-        total: data.length,
+        total: finished ? finishedCombo?.length : data.length,
       },
     });
   } catch (error) {
