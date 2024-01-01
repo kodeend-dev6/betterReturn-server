@@ -11,8 +11,7 @@ const passportGoogle = async () => {
         // callbackURL:
         //   "https://better-return-server.onrender.com/api/auth/google/callback",
 
-        callbackURL:
-          "https://better-server.kodeend.com/api/auth/google/callback",
+        callbackURL: `${process.env.SERVER_URL}/api/auth/google/callback`,
       },
       (accessToken, refreshToken, profile, done) => {
         return done(null, profile);
