@@ -80,9 +80,6 @@ const calculateROIForMonth = (monthData) => {
     const records = monthData[dayKey];
     const percentInvestment = percent / 100;
 
-    // Your existing ROI calculation logic based on records for the day within the month
-    // Example calculation logic:
-
     let winOdds = 0;
     let winM = 0;
 
