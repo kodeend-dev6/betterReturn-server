@@ -407,7 +407,7 @@ const getAllComboV2 = catchAsync(async (req, res) => {
       );
 
       if (comboData.length > 0) {
-        data.push(comboData);
+        data.push(...comboData);
       }
     });
 
