@@ -4,7 +4,10 @@ const catchAsync = require("../utils/errors/catchAsync");
 const sendResponse = require("../utils/sendResponse");
 const fetcher = require("../utils/fetcher/airTableFetcher");
 const soccerTable = config.db.soccerTableUrl;
+const csgoTable = config.db.csgoTableUrl;
+const valorantTable = config.db.valorantTableUrl;
 const apiKey = config.key.apiKey;
+const moment = require('moment');
 
 const DAYS_PER_REQUEST = 10;
 
@@ -199,151 +202,456 @@ function getWeekNumber(date) {
 }
 
 const getRoi = catchAsync(async (req, res) => {
-  const { startDate, endDate, initialBalance, percent, filter } = req.query;
 
-  if (filter) {
-    try {
-      const startedDate = new Date(startDate);
-      let currentDate = new Date(endDate);
-      let finalBalance = initialBalance;
-      let dataArray = [];
+  const { startDate, endDate, initialBalance, percent, filter, game } = req.query;
 
-      while (currentDate <= startedDate) {
-        const result = await fetcher.get(soccerTable, {
-          params: {
-            fields: ["Results", "PredictedOdds"],
-            filterByFormula: `AND({Date} = '${currentDate
-              .toISOString()
-              .slice(0, 10)}', {upload} = 1, NOT({MatchResults} = ''))`,
-            sort: [{ field: "Date", direction: "asc" }],
-          },
-        });
+  const formatDateForAirtable = (date) => moment(date).format('DD-MM-YYYY');
 
-        const records = result?.data?.records;
-        const percentInvestment = percent / 100;
+  if (game === 'csgo') {
+    if (filter) {
+      try {
+        const startedDate = new Date(startDate);
+        let currentDate = new Date(endDate);
+        let finalBalance = initialBalance;
+        let dataArray = [];
 
-        if (records.length > 0) {
-          const winOdds = records.reduce((sum, record) => {
-            if (record.fields.Results === "TRUE") {
-              return sum + (record.fields.PredictedOdds || 0);
+        while (currentDate <= startedDate) {
+          let formatedDate = formatDateForAirtable(currentDate)
+
+          const result = await fetcher.get(csgoTable, {
+            params: {
+              fields: ["Results", "True/false", "Best-odds-1", "Best-odds-2"],
+              filterByFormula: `AND({Date}='${formatedDate}', {upload}=1, NOT(BLANK({Results})))`,
+              sort: [{ field: "Date", direction: "asc" }],
+            },
+          });
+
+          const records = result?.data?.records;
+          const percentInvestment = percent / 100;
+
+          if (records.length > 0) {
+            const winOdds = records.reduce((sum, record) => {
+              if (record.fields["True/false"] === "true") {
+                if (record.fields.Results === '1') {
+                  return sum + (record.fields["Best-odds-1"] || 0);
+                } else if (record.fields.Results === '2') {
+                  return sum + (record.fields["Best-odds-2"] || 0);
+                }
+              }
+              return sum;
+            }, 0);
+
+            const winM = records.filter(
+              (record) => record.fields["True/false"] === "true"
+            ).length;
+
+            if (winM > 0) {
+              const avgOdds = winOdds / winM;
+              finalBalance =
+                (finalBalance -
+                  finalBalance * percentInvestment +
+                  avgOdds *
+                  (winM / records.length) *
+                  finalBalance *
+                  percentInvestment).toFixed(2);
             }
-            return sum;
-          }, 0);
-
-          const winM = records.filter(
-            (record) => record.fields.Results === "TRUE"
-          ).length;
-
-          if (winM > 0) {
-            const avgOdds = winOdds / winM;
-            finalBalance =
-              finalBalance -
-              finalBalance * percentInvestment +
-              avgOdds *
-              (winM / records.length) *
-              finalBalance *
-              percentInvestment;
           }
+
+          // Push date and finalBalance into dataArray as an object
+          dataArray.push({
+            date: currentDate.toISOString().slice(0, 10),
+            finalBalance: parseFloat(finalBalance),
+          });
+
+          currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // Push date and finalBalance into dataArray as an object
-        dataArray.push({
-          date: currentDate.toISOString().slice(0, 10),
-          finalBalance,
+        return sendResponse(res, {
+          statusCode: 200,
+          success: true,
+          message: "CSGO Roi calculation is successful",
+          data: { roi: finalBalance, dataArray },
+          meta: {
+            total: dataArray.length || 0,
+          },
         });
-
-        currentDate.setDate(currentDate.getDate() + 1);
+      } catch (error) {
+        sendResponse(res, {
+          statusCode: 500,
+          success: false,
+          message: "Error in fetching ROI data",
+          error: error.message,
+        });
       }
+    } else {
+      try {
+        let currentDate = new Date(); // Current date
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 1); // One month before the current date
 
-      sendResponse(res, {
-        statusCode: 200,
-        success: true,
-        message: "Roi calculation is successful",
-        data: { roi: finalBalance, dataArray },
-        meta: {
-          total: dataArray.length || 0,
-        },
-      });
-    } catch (error) {
-      sendResponse(res, {
-        statusCode: 500,
-        success: false,
-        message: "Error in fetching ROI data",
-        error: error.message,
-      });
+        let finalBalance = initialBalance;
+        let dataArray = [];
+
+        while (currentDate > startDate) {
+          const result = await fetcher.get(soccerTable, {
+            params: {
+              fields: ["Results", "PredictedOdds"],
+              filterByFormula: `AND({Date} = '${currentDate
+                .toISOString()
+                .slice(0, 10)}', {upload} = 1, NOT({Results} = ''))`,
+              sort: [{ field: "Date", direction: "asc" }],
+            },
+          });
+
+          const records = result?.data?.records;
+          const percentInvestment = percent / 100;
+
+          if (records.length > 0) {
+            const winOdds = records.reduce((sum, record) => {
+              if (record.fields.Results === "TRUE") {
+                return sum + (record.fields.PredictedOdds || 0);
+              }
+              return sum;
+            }, 0);
+
+            const winM = records.filter(
+              (record) => record.fields.Results === "TRUE"
+            ).length;
+
+            if (winM > 0) {
+              const avgOdds = winOdds / winM;
+              finalBalance =
+                finalBalance -
+                finalBalance * percentInvestment +
+                avgOdds *
+                (winM / records.length) *
+                finalBalance *
+                percentInvestment;
+            }
+          }
+
+          // Push date and finalBalance into dataArray as an object
+          dataArray.push({
+            date: currentDate.toISOString().slice(0, 10),
+            finalBalance,
+          });
+
+          currentDate.setDate(currentDate.getDate() - 1); // Decrement date by one day
+        }
+
+        return sendResponse(res, {
+          statusCode: 200,
+          success: true,
+          message: "CSGO Roi calculation is successful",
+          data: { roi: finalBalance, dataArray },
+          meta: {
+            total: dataArray.length || 0,
+          },
+        });
+      } catch (error) {
+        sendResponse(res, {
+          statusCode: 500,
+          success: false,
+          message: "Error in fetching ROI data",
+          error: error.message,
+        });
+      }
     }
-  } else {
-    try {
-      let currentDate = new Date(); // Current date
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 1); // One month before the current date
+  }
+  else if (game === 'valorant') {
+    if (filter) {
+      try {
+        const startedDate = new Date(startDate);
+        let currentDate = new Date(endDate);
+        let finalBalance = initialBalance;
+        let dataArray = [];
 
-      let finalBalance = initialBalance;
-      let dataArray = [];
+        while (currentDate <= startedDate) {
+          const result = await fetcher.get(valorantTable, {
+            params: {
+              fields: ["Result", "TrueFalse", "BestOdds1", "BestOdds2"],
+              filterByFormula: `AND({Date} = '${currentDate
+                .toISOString()
+                .slice(0, 10)}', {upload} = 1, NOT({Result} = ''))`,
+              sort: [{ field: "Date", direction: "asc" }],
+            },
+          });
 
-      while (currentDate > startDate) {
-        const result = await fetcher.get(soccerTable, {
-          params: {
-            fields: ["Results", "PredictedOdds"],
-            filterByFormula: `AND({Date} = '${currentDate
-              .toISOString()
-              .slice(0, 10)}', {upload} = 1, NOT({MatchResults} = ''))`,
-            sort: [{ field: "Date", direction: "asc" }],
-          },
-        });
+          const records = result?.data?.records;
+          const percentInvestment = percent / 100;
 
-        const records = result?.data?.records;
-        const percentInvestment = percent / 100;
+          if (records.length > 0) {
+            const winOdds = records.reduce((sum, record) => {
+              if (record.fields.Result === 1) {
+                return sum + (record.fields.BestOdds1 || 0);
+              } else if (record.fields.Result === 2) {
+                return sum + (record.fields.BestOdds1 || 0);
+              }
+              return sum;
+            }, 0);
 
-        if (records.length > 0) {
-          const winOdds = records.reduce((sum, record) => {
-            if (record.fields.Results === "TRUE") {
-              return sum + (record.fields.PredictedOdds || 0);
+            const winM = records.filter(
+              (record) => record.fields.TrueFalse === "True"
+            ).length;
+
+            if (winM > 0) {
+              const avgOdds = winOdds / winM;
+              finalBalance =
+                (finalBalance -
+                  finalBalance * percentInvestment +
+                  avgOdds *
+                  (winM / records.length) *
+                  finalBalance *
+                  percentInvestment).toFixed(2);
             }
-            return sum;
-          }, 0);
-
-          const winM = records.filter(
-            (record) => record.fields.Results === "TRUE"
-          ).length;
-
-          if (winM > 0) {
-            const avgOdds = winOdds / winM;
-            finalBalance =
-              finalBalance -
-              finalBalance * percentInvestment +
-              avgOdds *
-              (winM / records.length) *
-              finalBalance *
-              percentInvestment;
           }
+
+          // Push date and finalBalance into dataArray as an object
+          dataArray.push({
+            date: currentDate.toISOString().slice(0, 10),
+            finalBalance: parseFloat(finalBalance),
+          });
+
+          currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // Push date and finalBalance into dataArray as an object
-        dataArray.push({
-          date: currentDate.toISOString().slice(0, 10),
-          finalBalance,
+        return sendResponse(res, {
+          statusCode: 200,
+          success: true,
+          message: "Valorant Roi calculation is successful",
+          data: { roi: finalBalance, dataArray },
+          meta: {
+            total: dataArray.length || 0,
+          },
         });
-
-        currentDate.setDate(currentDate.getDate() - 1); // Decrement date by one day
+      } catch (error) {
+        sendResponse(res, {
+          statusCode: 500,
+          success: false,
+          message: "Error in fetching ROI data",
+          error: error.message,
+        });
       }
+    } else {
+      try {
+        let currentDate = new Date(); // Current date
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 1); // One month before the current date
 
-      sendResponse(res, {
-        statusCode: 200,
-        success: true,
-        message: "Roi calculation is successful",
-        data: { roi: finalBalance, dataArray },
-        meta: {
-          total: dataArray.length || 0,
-        },
-      });
-    } catch (error) {
-      sendResponse(res, {
-        statusCode: 500,
-        success: false,
-        message: "Error in fetching ROI data",
-        error: error.message,
-      });
+        let finalBalance = initialBalance;
+        let dataArray = [];
+
+        while (currentDate > startDate) {
+          const result = await fetcher.get(soccerTable, {
+            params: {
+              fields: ["Results", "PredictedOdds"],
+              filterByFormula: `AND({Date} = '${currentDate
+                .toISOString()
+                .slice(0, 10)}', {upload} = 1, NOT({MatchResults} = ''))`,
+              sort: [{ field: "Date", direction: "asc" }],
+            },
+          });
+
+          const records = result?.data?.records;
+          const percentInvestment = percent / 100;
+
+          if (records.length > 0) {
+            const winOdds = records.reduce((sum, record) => {
+              if (record.fields.Results === "TRUE") {
+                return sum + (record.fields.PredictedOdds || 0);
+              }
+              return sum;
+            }, 0);
+
+            const winM = records.filter(
+              (record) => record.fields.Results === "TRUE"
+            ).length;
+
+            if (winM > 0) {
+              const avgOdds = winOdds / winM;
+              finalBalance =
+                finalBalance -
+                finalBalance * percentInvestment +
+                avgOdds *
+                (winM / records.length) *
+                finalBalance *
+                percentInvestment;
+            }
+          }
+
+          // Push date and finalBalance into dataArray as an object
+          dataArray.push({
+            date: currentDate.toISOString().slice(0, 10),
+            finalBalance,
+          });
+
+          currentDate.setDate(currentDate.getDate() - 1); // Decrement date by one day
+        }
+
+        return sendResponse(res, {
+          statusCode: 200,
+          success: true,
+          message: "Valorant Roi calculation is successful",
+          data: { roi: finalBalance, dataArray },
+          meta: {
+            total: dataArray.length || 0,
+          },
+        });
+      } catch (error) {
+        sendResponse(res, {
+          statusCode: 500,
+          success: false,
+          message: "Error in fetching ROI data",
+          error: error.message,
+        });
+      }
+    }
+  }
+  else {
+    if (filter) {
+      try {
+        const startedDate = new Date(startDate);
+        let currentDate = new Date(endDate);
+        let finalBalance = initialBalance;
+        let dataArray = [];
+
+        while (currentDate <= startedDate) {
+          const result = await fetcher.get(soccerTable, {
+            params: {
+              fields: ["Results", "PredictedOdds"],
+              filterByFormula: `AND({Date} = '${currentDate
+                .toISOString()
+                .slice(0, 10)}', {upload} = 1, NOT({MatchResults} = ''))`,
+              sort: [{ field: "Date", direction: "asc" }],
+            },
+          });
+
+          const records = result?.data?.records;
+          const percentInvestment = percent / 100;
+
+          if (records.length > 0) {
+            const winOdds = records.reduce((sum, record) => {
+              if (record.fields.Results === "TRUE") {
+                return sum + (record.fields.PredictedOdds || 0);
+              }
+              return sum;
+            }, 0);
+
+            const winM = records.filter(
+              (record) => record.fields.Results === "TRUE"
+            ).length;
+
+            if (winM > 0) {
+              const avgOdds = winOdds / winM;
+              finalBalance =
+                (finalBalance -
+                  finalBalance * percentInvestment +
+                  avgOdds *
+                  (winM / records.length) *
+                  finalBalance *
+                  percentInvestment).toFixed(2);
+            }
+          }
+
+          // Push date and finalBalance into dataArray as an object
+          dataArray.push({
+            date: currentDate.toISOString().slice(0, 10),
+            finalBalance: parseFloat(finalBalance),
+          });
+
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        sendResponse(res, {
+          statusCode: 200,
+          success: true,
+          message: "Soccer Roi calculation is successful",
+          data: { roi: finalBalance, dataArray },
+          meta: {
+            total: dataArray.length || 0,
+          },
+        });
+      } catch (error) {
+        sendResponse(res, {
+          statusCode: 500,
+          success: false,
+          message: "Error in fetching ROI data",
+          error: error.message,
+        });
+      }
+    } else {
+      try {
+        let currentDate = new Date(); // Current date
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 1); // One month before the current date
+
+        let finalBalance = initialBalance;
+        let dataArray = [];
+
+        while (currentDate > startDate) {
+          const result = await fetcher.get(soccerTable, {
+            params: {
+              fields: ["Results", "PredictedOdds"],
+              filterByFormula: `AND({Date} = '${currentDate
+                .toISOString()
+                .slice(0, 10)}', {upload} = 1, NOT({MatchResults} = ''))`,
+              sort: [{ field: "Date", direction: "asc" }],
+            },
+          });
+
+          const records = result?.data?.records;
+          const percentInvestment = percent / 100;
+
+          if (records.length > 0) {
+            const winOdds = records.reduce((sum, record) => {
+              if (record.fields.Results === "TRUE") {
+                return sum + (record.fields.PredictedOdds || 0);
+              }
+              return sum;
+            }, 0);
+
+            const winM = records.filter(
+              (record) => record.fields.Results === "TRUE"
+            ).length;
+
+            if (winM > 0) {
+              const avgOdds = winOdds / winM;
+              finalBalance =
+                finalBalance -
+                finalBalance * percentInvestment +
+                avgOdds *
+                (winM / records.length) *
+                finalBalance *
+                percentInvestment;
+            }
+          }
+
+          // Push date and finalBalance into dataArray as an object
+          dataArray.push({
+            date: currentDate.toISOString().slice(0, 10),
+            finalBalance,
+          });
+
+          currentDate.setDate(currentDate.getDate() - 1); // Decrement date by one day
+        }
+
+        sendResponse(res, {
+          statusCode: 200,
+          success: true,
+          message: "Roi calculation is successful",
+          data: { roi: finalBalance, dataArray },
+          meta: {
+            total: dataArray.length || 0,
+          },
+        });
+      } catch (error) {
+        sendResponse(res, {
+          statusCode: 500,
+          success: false,
+          message: "Error in fetching ROI data",
+          error: error.message,
+        });
+      }
     }
   }
 });
