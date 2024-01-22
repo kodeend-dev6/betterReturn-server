@@ -306,10 +306,12 @@ const getRoi = catchAsync(async (req, res) => {
 
         if (records.length > 0) {
           const winOdds = records.reduce((sum, record) => {
-            if (record.fields.Result === 1) {
-              return sum + (record.fields.BestOdds1 || 0);
-            } else if (record.fields.Result === 2) {
-              return sum + (record.fields.BestOdds1 || 0);
+            if (record.fields.TrueFalse === "True") {
+              if (record.fields.Result === 1) {
+                return sum + (record.fields.BestOdds1 || 0);
+              } else if (record.fields.Result === 2) {
+                return sum + (record.fields.BestOdds2 || 0);
+              }
             }
             return sum;
           }, 0);
