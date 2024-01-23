@@ -24,8 +24,11 @@ const groupDataByDate = (data, dateFormat, game) => {
             if (record?.fields.Results === record?.fields.Prediction) {
                 groupedByDate[date].accuracy += 1;
             }
+        } else if (game === 'valorant') {
+            if (record.fields.Result === record.fields.Prediction) {
+                groupedByDate[date].accuracy += 1;
+            }
         } else {
-
             if (record.fields.Results === 'TRUE') {
                 groupedByDate[date].accuracy += 1;
             }
@@ -58,7 +61,12 @@ const groupDataByWeek = (data, dateFormat, game) => {
             if (record?.fields.Results === record?.fields.Prediction) {
                 groupedByWeek[key].accuracy += 1;
             }
-        } else {
+        } else if (game === 'valorant') {
+            if (record.fields.Result === record.fields.Prediction) {
+                groupedByWeek[key].accuracy += 1;
+            }
+        }
+        else {
             if (record.fields.Results === 'TRUE') {
                 groupedByWeek[key].accuracy += 1;
             }
@@ -90,7 +98,12 @@ const groupDataByMonth = (data, dateFormat, game) => {
             if (record?.fields.Results === record?.fields.Prediction) {
                 groupedByMonth[key].accuracy += 1;
             }
-        } else {
+        } else if (game === 'valorant') {
+            if (record.fields.Result === record.fields.Prediction) {
+                groupedByMonth[key].accuracy += 1;
+            }
+        }
+        else {
             if (record.fields.Results === 'TRUE') {
                 groupedByMonth[key].accuracy += 1;
             }
@@ -331,15 +344,9 @@ const getDashboardData = catchAsync(async (req, res) => {
                 const response = await axios.get(valorantTable, {
                     headers: { Authorization: `Bearer ${apiKey}` },
                     params: {
-                        fields: ['Date', 'LeagueName', 'Country', 'HomeTeam', 'AwayTeam', 'Results', 'PredictedOdds', 'Season'],
+                        fields: ['Date', 'Team1', 'Team2', 'BestOdds1', 'BestOdds2', 'Prediction', 'Result'],
                         filterByFormula: `AND(
-                            OR(
-                                REGEX_MATCH(LOWER({HomeTeam}), LOWER('${escapedTeamName}')),
-                                REGEX_MATCH(LOWER({AwayTeam}), LOWER('${escapedTeamName}'))
-                            ),
-                            REGEX_MATCH(LOWER({LeagueName}), LOWER('${escapedLeagueName}')),
-                            REGEX_MATCH(LOWER({Country}), LOWER('${escapedCountryName}')),
-                            NOT({MatchResults} = BLANK()),
+                            NOT({Result} = BLANK()),
                             NOT({Prediction} = BLANK()),
                             {Date} >= '${formattedStartDate}',
                             {Date} <= '${formattedEndDate}'
@@ -351,21 +358,38 @@ const getDashboardData = catchAsync(async (req, res) => {
                 allData.push(...response.data.records);
             }
 
-            const totalWinMatch = allData?.filter(m => m.fields.Results === 'TRUE');
+            const totalWinMatch = allData?.filter(m => m.fields.Result === m.fields.Prediction);
             const winMatch = totalWinMatch?.length;
             const lostMatch = allData?.length - winMatch;
             const total = winMatch + lostMatch
+
+            // console.log(total)
+            // console.log(winMatch)
+            // console.log(lostMatch)
 
             let winOdds = 0;
             let maxOdds = -1;
             let minOdds = 20;
             for (let i = 0; i < winMatch; i++) {
-                winOdds += totalWinMatch[i].fields.PredictedOdds;
-                if (totalWinMatch[i]?.fields?.PredictedOdds > maxOdds) {
-                    maxOdds = totalWinMatch[i]?.fields?.PredictedOdds
-                }
-                if (totalWinMatch[i]?.fields?.PredictedOdds < minOdds) {
-                    minOdds = totalWinMatch[i]?.fields?.PredictedOdds
+                if (totalWinMatch[i]?.fields?.Prediction === 1) {
+                    winOdds += totalWinMatch[i]?.fields?.BestOdds1;
+
+                    if (totalWinMatch[i]?.fields?.BestOdds1 > maxOdds) {
+                        maxOdds = totalWinMatch[i]?.fields?.BestOdds1
+                    }
+                    if (totalWinMatch[i]?.fields?.BestOdds1 < minOdds) {
+                        minOdds = totalWinMatch[i]?.fields?.BestOdds1
+                    }
+
+                } else if (totalWinMatch[i]?.fields?.Prediction === 2) {
+                    winOdds += totalWinMatch[i]?.fields?.BestOdds2;
+
+                    if (totalWinMatch[i]?.fields?.BestOdds2 > maxOdds) {
+                        maxOdds = totalWinMatch[i]?.fields?.BestOdds2
+                    }
+                    if (totalWinMatch[i]?.fields?.BestOdds2 < minOdds) {
+                        minOdds = totalWinMatch[i]?.fields?.BestOdds2
+                    }
                 }
             }
 
@@ -374,9 +398,9 @@ const getDashboardData = catchAsync(async (req, res) => {
 
             const accuracyData = { winMatch, lostMatch, avgOdds, maxOdds, minOdds, winParc, total }
 
-            const dataGroupedByDate = groupDataByDate(allData);
-            const dataGroupedByWeek = groupDataByWeek(allData);
-            const dataGroupedByMonth = groupDataByMonth(allData);
+            const dataGroupedByDate = groupDataByDate(allData, dateFormat, game);
+            const dataGroupedByWeek = groupDataByWeek(allData, dateFormat, game);
+            const dataGroupedByMonth = groupDataByMonth(allData, dateFormat, game);
 
             sendResponse(res, {
                 statusCode: 200,
@@ -441,8 +465,6 @@ const getDashboardData = catchAsync(async (req, res) => {
                         sort: [{ field: 'Date', direction: 'desc' }]
                     },
                 });
-
-                console.log(response.data.records)
 
                 allData.push(...response.data.records);
             }
