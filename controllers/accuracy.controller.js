@@ -89,7 +89,6 @@ const getAccuracy = catchAsync(async (req, res) => {
         allHandicapData.push(...response.data.records);
     }
 
-
     let handicapWin = 0;
     let handicapLost = 0;
     let handicapTotalOdds = 0
@@ -118,6 +117,34 @@ const getAccuracy = catchAsync(async (req, res) => {
             if (match?.fields?.TCornerResult === 'True') {
                 handicapWin++;
                 handicapTotalOdds += Number(match?.fields?.TCornerOdds);
+            } else {
+                handicapLost++;
+            }
+
+        }
+
+        if (match?.fields?.T1GoalUOResult) {
+            if (match?.fields?.T1GoalUOResult === 'True') {
+                handicapWin++;
+                handicapTotalOdds += Number(match?.fields?.T1GoalUOOdds);
+            } else {
+                handicapLost++;
+            }
+
+        }
+        if (match?.fields?.T2GoalUOResult) {
+            if (match?.fields?.T2GoalUOResult === 'True') {
+                handicapWin++;
+                handicapTotalOdds += Number(match?.fields?.T2GoalUOOdds);
+            } else {
+                handicapLost++;
+            }
+
+        }
+        if (match?.fields?.TGoalUOResult) {
+            if (match?.fields?.TGoalUOResult === 'True') {
+                handicapWin++;
+                handicapTotalOdds += Number(match?.fields?.TGoalUOOdds);
             } else {
                 handicapLost++;
             }
