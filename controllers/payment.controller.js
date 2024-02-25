@@ -134,9 +134,9 @@ const cancelSubscription = catchAsync(async (req, res) => {
     fields: {
       Subscription_id: "",
       Plan_name: "",
-      Plan_start_date: "",
-      Plan_end_date: "",
-      Trial_ends_at: "",
+      Plan_start_date: null,
+      Plan_end_date: null,
+      Trial_ends_at: null,
     },
   };
 
