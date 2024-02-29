@@ -10,7 +10,7 @@ const createSubscriptionToDB = async (subscription) => {
     const stripePLans = result?.data?.records;
 
     const plan = stripePLans?.find(
-      (plan) => plan?.fields?.planId === subscription?.plan?.id
+      (plan) => plan?.fields?.planId === subscription?.items?.data[0]?.plan?.id
     );
 
     const newData = {
