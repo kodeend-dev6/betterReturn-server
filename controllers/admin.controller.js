@@ -481,6 +481,23 @@ const getDashboardData = catchAsync(async (req, res) => {
 
       const today = new Date();
       const allData = [];
+      const sevenDaysData = [];
+      let sevenDaysWinMatch = 0;
+      let sevenDaysLostMatch = 0;
+      let yesterdayWinMatch = 0;
+      let yesterdayLostMatch = 0;
+
+      // date 7 days ago
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      const formatted7daysDate = sevenDaysAgo.toISOString().split("T")[0];
+
+      // date of yesterday
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      const formattedYesterday = yesterday.toISOString().split("T")[0];
+
+
 
       for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
         const startDay = i;
@@ -526,6 +543,32 @@ const getDashboardData = catchAsync(async (req, res) => {
         allData.push(...response.data.records);
       }
 
+
+      // last 7 days data
+      for (let i = 0; i < allData?.length; i++) {
+        if (allData[i]?.fields?.Date > formatted7daysDate) {
+          if(allData[i]?.fields?.Results === "TRUE"){
+            sevenDaysWinMatch += 1;
+          }else{
+            sevenDaysLostMatch += 1;
+          }  
+          sevenDaysData.push(allData[i]);
+        }
+
+        if (allData[i]?.fields?.Date >= formattedYesterday) {
+          if(allData[i]?.fields?.Results === "TRUE"){
+            yesterdayWinMatch += 1;
+          }else{
+            yesterdayLostMatch += 1;
+          }  
+        }
+      }
+
+   
+      const sevenDaysAccuracy = ((sevenDaysWinMatch / sevenDaysData?.length) * 100).toFixed(2);
+      const yesterdayAccuracy = ((yesterdayWinMatch / (yesterdayWinMatch + yesterdayLostMatch)) * 100).toFixed(2);
+     
+
       const totalWinMatch = allData?.filter((m) => m.fields.Results === "TRUE");
       const winMatch = totalWinMatch?.length;
       const lostMatch = allData?.length - winMatch;
@@ -566,6 +609,8 @@ const getDashboardData = catchAsync(async (req, res) => {
         success: true,
         message: "Get Dashboard data Successful",
         data: {
+          yesterdayAccuracy,
+          sevenDaysAccuracy,
           accuracyData,
           dataGroupedByDate,
           dataGroupedByWeek,
