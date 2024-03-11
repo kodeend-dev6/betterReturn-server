@@ -11,125 +11,74 @@ const getAllHandicap = catchAsync(async (req, res) => {
   const finished = req.query.finished;
   const limit = 100;
 
+  let result;
 
   if (finished) {
-
-    const result = await fetcher.get(handicapTable, {
+    result = await fetcher.get(handicapTable, {
       params: {
         filterByFormula: `AND({Date} <= '${date}', {upload}=1)`,
         pageSize: limit,
         sort: [{ field: "Date", direction: "desc" }],
       },
     });
+  } else {
+    result = await fetcher.get(handicapTable, {
+      params: {
+        filterByFormula: `AND({Date} = '${date}', {upload}=1)`,
+        sort: [{ field: "Date", direction: "desc" }],
+      },
+    });
+  }
 
+  let data = [];
 
-    let data = [];
+  const matchIds = result?.data?.records?.map(record => record?.fields?.MatchID).filter(Boolean);
+
+  if (matchIds.length > 0) {
+    const soccerResult = await fetcher.get(soccerTable, {
+      params: {
+        filterByFormula: `OR(${matchIds.map(id => `{MatchID}="${id}"`).join(",")})`,
+      },
+    });
+
+    const soccerMap = soccerResult?.data?.records?.reduce((map, record) => {
+      map[record.fields.MatchID] = record.fields;
+      return map;
+    }, {});
 
     for (let i = 0; i < result?.data?.records?.length; i++) {
       const record = result?.data?.records[i];
       let newRecord = { ...record };
 
-      const match = record?.fields?.MatchID
-        ? {
-          matchId: record?.fields?.MatchID,
-          tableUrl: soccerTable,
-
-        }
-        : null;
-
-      if (match) {
-        const matchData = await fetcher.get(`${match?.tableUrl}`, {
-          params: {
-            filterByFormula: `{MatchID} = "${match?.matchId}"`,
-          },
-        });
-
+      const matchId = record?.fields?.MatchID;
+      if (matchId && soccerMap[matchId]) {
         newRecord = {
           ...newRecord,
           fields: {
-            ...newRecord?.fields,
-            ...matchData?.data?.records[0]?.fields,
+            ...newRecord.fields,
+            ...soccerMap[matchId],
           },
         };
-
-      }
-  
-      if (newRecord?.fields?.MatchResults) {
         data.push(newRecord);
       }
 
       if (finished && data.length >= limit) {
         break;
       }
-
     }
-
-    sendResponse(res, {
-      success: true,
-      statusCode: 200,
-      message: "Retrieved all handicap successfully!",
-      data,
-      meta: {
-        total: data.length,
-      },
-    });
-
-  }
-  else {
-
-    const result = await fetcher.get(handicapTable, {
-      params: {
-        filterByFormula: `AND({Date} = '${date}', {upload}=1)`,
-        sort: [{ field: "Date", direction: "desc" }],
-      },
-    });
-
-
-    let data = [];
-
-    for (let i = 0; i < result?.data?.records?.length; i++) {
-      const record = result?.data?.records[i];
-      let newRecord = { ...record };
-
-      const match = record?.fields?.MatchID
-        ? {
-          matchId: record?.fields?.MatchID,
-          tableUrl: soccerTable,
-
-        }
-        : null;
-
-      if (match) {
-        const matchData = await fetcher.get(`${match?.tableUrl}`, {
-          params: {
-            filterByFormula: `{MatchID} = "${match?.matchId}"`,
-          },
-        });
-
-        newRecord = {
-          ...newRecord,
-          fields: {
-            ...newRecord?.fields,
-            ...matchData?.data?.records[0]?.fields,
-          },
-        };
-      }
-
-      data.push(newRecord);
-    }
-
-    sendResponse(res, {
-      success: true,
-      statusCode: 200,
-      message: "Retrieved all handicap successfully!",
-      data,
-      meta: {
-        total: data.length,
-      },
-    });
   }
 
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Retrieved all handicap successfully!",
+    data,
+    meta: {
+      total: data.length,
+    },
+  });
 });
+
 
 module.exports = {
   getAllHandicap,
