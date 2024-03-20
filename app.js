@@ -21,6 +21,8 @@ const handicapRouter = require("./routes/handicap.route");
 const roiRouter = require('./routes/roi.route');
 const accuracyRouter = require('./routes/accuracy.route');
 const adminRouter = require("./routes/admin.route");
+const bannerRouter = require("./routes/banner.route");
+const bannerRouter2 = require("./routes/bannerRoute2");
 
 const passport = require("passport");
 const expressSession = require("express-session");
@@ -74,6 +76,8 @@ app.use("/api/handicap", handicapRouter);
 app.use("/api/roi", roiRouter);
 app.use('/api/accuracy', accuracyRouter);
 app.use('/api/admin', adminRouter);
+app.use("/api/banner", bannerRouter);
+app.use("/api/v2/banner", bannerRouter2)
 
 // Global Error Handler
 app.use(globalErrorHandler);
