@@ -72,7 +72,7 @@ const roiCalculation = catchAsync(async (req, res) => {
       meta: {
         total: allSoccerData?.length || 0,
       },
-      data: { basicRoi, proRoi},
+      data: { basicRoi, proRoi },
     });
   } catch (error) {
     sendResponse(res, {
@@ -84,7 +84,177 @@ const roiCalculation = catchAsync(async (req, res) => {
   }
 });
 
-module.exports = { roiCalculation };
+const soccerPlanRoi = catchAsync(async (req, res) => {
+  const type = req?.query?.type;
+  const year = req?.query?.year;
+  const week = req?.query?.week;
+  const month = req?.query?.month;
+
+  if (type === "weekly") {
+    try {
+      const date = new Date(year, 0, 1);
+      const dayOfWeek = date.getDay();
+      date.setDate(date.getDate() + (1 - dayOfWeek));
+      date.setDate(date.getDate() + (week - 1) * 7);
+
+      const weekEndDate = new Date(date);
+      weekEndDate.setDate(weekEndDate.getDate() + 7);
+
+      const days = 7;
+
+      const allSoccerData = [];
+
+      for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
+        const startDay = i;
+        const endDay = Math.min(i + DAYS_PER_REQUEST - 1, parseInt(days) - 1);
+        const startDate = new Date(weekEndDate);
+        startDate.setDate(startDate.getDate() - endDay);
+        const endDate = new Date(weekEndDate);
+        endDate.setDate(endDate.getDate() - startDay);
+
+        const formattedStartDate = startDate.toISOString().split("T")[0];
+        const formattedEndDate = endDate.toISOString().split("T")[0];
+
+        const response = await fetcher.get(soccerTable, {
+          params: {
+            fields: [
+              "HomeTeam",
+              "AwayTeam",
+              "Prediction",
+              "Results",
+              "Date",
+              "PredictedOdds",
+            ],
+            filterByFormula: `AND(
+                          NOT({MatchResults} = BLANK()),
+                          NOT({Prediction} = BLANK()),
+                          {upload}=1,
+                          {Date} >= '${formattedStartDate}',
+                          {Date} <= '${formattedEndDate}'
+                      )`,
+          },
+        });
+
+        allSoccerData.push(...response.data.records);
+      }
+
+      const groupData = groupByDate(allSoccerData);
+      const weekendData = separateWeekendData(allSoccerData);
+      const groupWeekendData = groupByDate(weekendData);
+      const proRoi = calculateRoi(groupData, 1000, 0.15);
+      const basicRoi = calculateRoi(groupWeekendData, 1000, 0.15);
+
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Roi weekly data get Successfully",
+        meta: {
+          total: allSoccerData?.length || 0,
+        },
+        data: { proRoi, basicRoi },
+      });
+    } catch (error) {
+      sendResponse(res, {
+        statusCode: 500,
+        success: false,
+        message: "Error in fetching roi data",
+        error: error.message,
+      });
+    }
+  } else if (type === "monthly") {
+    try {
+      const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
+      const monthIndex = monthNames.indexOf(month);
+      if (monthIndex === -1) {
+        return "Invalid month name";
+      }
+      let date = new Date(year, monthIndex, 1);
+
+      const monthEndDate = new Date(date);
+      monthEndDate.setMonth(monthEndDate.getMonth() + 1);
+      const days = new Date(
+        monthEndDate.getFullYear(),
+        monthEndDate.getMonth(),
+        0
+      ).getDate();
+
+      const allSoccerData = [];
+
+      for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
+        const startDay = i;
+        const endDay = Math.min(i + DAYS_PER_REQUEST - 1, parseInt(days) - 1);
+        const startDate = new Date(monthEndDate);
+        startDate.setDate(startDate.getDate() - endDay);
+        const endDate = new Date(monthEndDate);
+        endDate.setDate(endDate.getDate() - startDay);
+
+        const formattedStartDate = startDate.toISOString().split("T")[0];
+        const formattedEndDate = endDate.toISOString().split("T")[0];
+
+        const response = await fetcher.get(soccerTable, {
+          params: {
+            fields: [
+              "HomeTeam",
+              "AwayTeam",
+              "Prediction",
+              "Results",
+              "Date",
+              "PredictedOdds",
+            ],
+            filterByFormula: `AND(
+                          NOT({MatchResults} = BLANK()),
+                          NOT({Prediction} = BLANK()),
+                          {upload}=1,
+                          {Date} >= '${formattedStartDate}',
+                          {Date} <= '${formattedEndDate}'
+                      )`,
+          },
+        });
+
+        allSoccerData.push(...response.data.records);
+      }
+
+      const groupData = groupByDate(allSoccerData);
+      const weekendData = separateWeekendData(allSoccerData);
+      const groupWeekendData = groupByDate(weekendData);
+      const proRoi = calculateRoi(groupData, 1000, 0.15);
+      const basicRoi = calculateRoi(groupWeekendData, 1000, 0.15);
+
+      sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Roi monthly data get Successfully",
+        meta: {
+          total: 0,
+        },
+        data: { proRoi, basicRoi },
+      });
+    } catch (error) {
+      sendResponse(res, {
+        statusCode: 500,
+        success: false,
+        message: "Error in fetching roi data",
+        error: error.message,
+      });
+    }
+  }
+});
+
+module.exports = { roiCalculation, soccerPlanRoi };
 
 const groupByDate = (allData) => {
   // Grouping allSoccerData by Date
@@ -166,5 +336,5 @@ const calculateRoi = (allData, initialBalance, percent) => {
     dataArray.push({ date, finalBalance });
   }
   // console.log(dataArray);
-  return {roi:finalBalance, dataArray};
+  return { roi: finalBalance, dataArray };
 };
