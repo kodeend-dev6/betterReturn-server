@@ -166,5 +166,5 @@ const calculateRoi = (allData, initialBalance, percent) => {
     dataArray.push({ date, finalBalance });
   }
   // console.log(dataArray);
-  return {finalBalance, dataArray};
+  return {roi:finalBalance, dataArray};
 };
