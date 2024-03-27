@@ -90,6 +90,23 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
   const week = req?.query?.week;
   const month = req?.query?.month;
 
+  if (!week && type === "weekly") {
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "No week specified",
+      data: { proRoi: null, basicRoi: null },
+    });
+  }
+  if (!month && type === "monthly") {
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "No month specified",
+      data: { proRoi: null, basicRoi: null },
+    });
+  }
+
   if (type === "weekly") {
     try {
       const date = new Date(year, 0, 1);
