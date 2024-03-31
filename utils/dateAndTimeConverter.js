@@ -68,7 +68,7 @@ const convertedFromDB = async (allData, desiredTimeZone, desiredDate) => {
       const swedenDateTime = `${item.fields.Date} ${item.fields.Time}`;
       const convertedDateTime = moment2
         .tz(swedenDateTime, "YYYY-MM-DD h:mm A", "Europe/Stockholm")
-        .tz(desiredTimeZone);
+        .tz(desiredTimeZone).add(1, 'hours');
 
       if (
         desiredDate &&
