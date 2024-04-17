@@ -31,6 +31,18 @@ const getAllSoccerMatches = async (req, res) => {
 const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
   const { value, time, timeZone, filter } = req.query;
 
+  const today = moment().format("YYYY-MM-DD");
+  const rightDate = moment(today).add(1, "days").format("YYYY-MM-DD");
+
+  if (req.user.role !== "admin" && rightDate < moment(value).format("YYYY-MM-DD")) {
+    return sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Soccer Match retrieved successfully",
+      data: [],
+    });
+  }
+
   // Filtering Finished Matches
   if (filter === "finished") {
     const selectedDay = await convertedToDB(value, time, timeZone);
@@ -117,7 +129,7 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const convertedDatas = await convertedFromDB(allData, timeZone, value); 
+    const convertedDatas = await convertedFromDB(allData, timeZone, value);
 
     sendResponse(res, {
       statusCode: 200,

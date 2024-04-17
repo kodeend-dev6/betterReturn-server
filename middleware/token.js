@@ -22,6 +22,7 @@ exports.verifyToken =catchAsync(async (req, res, next) => {
       process.env.TOKEN_SECRET
     );
     req.user = decoded;
+    // console.log(req.user);
     next();
   } catch (error) {
     throw new ApiError(403, "Forbidden Access ..!");
