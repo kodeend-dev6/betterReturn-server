@@ -57,7 +57,8 @@ passportGoogle();
 
 // Default Route
 app.get("/", (req, res) => {
-  res.send("Better Return server is running...");
+  // res.send("Better Return server is running...");
+  res.redirect("https://documenter.getpostman.com/view/31243692/2sA35LTyev");
 });
 
 // All Routes
