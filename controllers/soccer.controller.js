@@ -1,5 +1,6 @@
 const config = require("../config/config");
 const soccerTable = config.db.soccerTableUrl;
+const handicapTable = config.db.handicapTableUrl;
 const apiKey = config.key.apiKey;
 const axios = require("axios");
 const moment = require("moment");
@@ -31,6 +32,7 @@ const getAllSoccerMatches = async (req, res) => {
 const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
   const { value, time, timeZone, filter } = req.query;
 
+  // for admin seen all matches
   const today = moment().format("YYYY-MM-DD");
   const rightDate = moment(today).add(1, "days").format("YYYY-MM-DD");
 
@@ -63,7 +65,9 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
 
     const filterData = allData.filter((data) => data.fields.Results);
 
-    const convertedDatas = await convertedFromDB(filterData, timeZone, value);
+    const modifiedData = await ModifiedPrediction(filterData)
+
+    const convertedDatas = await convertedFromDB(modifiedData, timeZone, value);
 
     sendResponse(res, {
       statusCode: 200,
@@ -95,7 +99,10 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
       },
     });
     const allData = response.data.records;
-    const convertedDatas = await convertedFromDB(allData, timeZone);
+
+    const modifiedData = await ModifiedPrediction(allData)
+
+    const convertedDatas = await convertedFromDB(modifiedData, timeZone);
 
     sendResponse(res, {
       statusCode: 200,
@@ -129,7 +136,9 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
     const response = await axios.get(url, { headers });
     const allData = response.data.records;
 
-    const convertedDatas = await convertedFromDB(allData, timeZone, value);
+    const modifiedData = await ModifiedPrediction(allData);
+
+    const convertedDatas = await convertedFromDB(modifiedData, timeZone, value);
 
     sendResponse(res, {
       statusCode: 200,
@@ -140,6 +149,62 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
   }
 });
 
+const ModifiedPrediction = async (allData) => {
+
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  for (let i = 0; i < allData.length; i++) {
+    if (allData[i]?.fields?.HandicapMainpage) {
+      const match = allData[i];
+      const matchId = match?.fields?.MatchID;
+      const handicapUrl = `${handicapTable}?filterByFormula=AND({MatchID}='${matchId}')`;
+      const handicapResponse = await axios.get(handicapUrl, { headers });
+      const handicapData = handicapResponse.data.records;
+
+      if (
+        handicapData[0]?.fields?.Home.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Home +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T1CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = handicapData[0]?.fields.T1CornerOdds;
+        match.fields.Results =
+          handicapData[0]?.fields.T1CornerResult.toUpperCase();
+      } else if (
+        handicapData[0]?.fields?.Away.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Away +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T2CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = handicapData[0].fields?.T2CornerOdds;
+        match.fields.Results =
+          handicapData[0]?.fields.T2CornerResult.toUpperCase();
+      } else {
+        match.fields.Prediction =
+          "Total" +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.TCornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = handicapData[0]?.fields?.TCornerOdds;
+        match.fields.Results =
+          handicapData[0]?.fields?.TCornerResult.toUpperCase();
+      }
+    }
+  }
+
+  return allData;
+};
 const getAllFinishedSoccerMatches = async (req, res) => {
   try {
     const selectedDay = req.query.selectedDay;

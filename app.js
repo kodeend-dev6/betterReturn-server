@@ -18,12 +18,12 @@ const PickOfTheDayRouter = require("./routes/pickOfDay.route");
 const reviewRouter = require("./routes/review.route");
 const comboRouter = require("./routes/combo.route");
 const handicapRouter = require("./routes/handicap.route");
-const roiRouter = require('./routes/roi.route');
-const accuracyRouter = require('./routes/accuracy.route');
+const roiRouter = require("./routes/roi.route");
+const accuracyRouter = require("./routes/accuracy.route");
 const adminRouter = require("./routes/admin.route");
 const bannerRouter = require("./routes/banner.route");
 const bannerRouter2 = require("./routes/bannerRoute2");
-const roiRouter2 = require('./routes/roi.route2');
+const roiRouter2 = require("./routes/roi.route2");
 
 const passport = require("passport");
 const expressSession = require("express-session");
@@ -57,7 +57,9 @@ passportGoogle();
 
 // Default Route
 app.get("/", (req, res) => {
-  // res.send("Better Return server is running...");
+  res.send("Better Return server is running...");
+});
+app.get("/postman", (req, res) => {
   res.redirect("https://documenter.getpostman.com/view/31243692/2sA35LTyev");
 });
 
@@ -76,8 +78,8 @@ app.use("/api/review", reviewRouter);
 app.use("/api/combo", comboRouter);
 app.use("/api/handicap", handicapRouter);
 app.use("/api/roi", roiRouter);
-app.use('/api/accuracy', accuracyRouter);
-app.use('/api/admin', adminRouter);
+app.use("/api/accuracy", accuracyRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/banner", bannerRouter);
 app.use("/api/v2/banner", bannerRouter2);
 app.use("/api/v2/roi", roiRouter2);
