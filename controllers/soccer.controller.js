@@ -173,7 +173,7 @@ const ModifiedPrediction = async (allData) => {
           "(" +
           handicapData[0]?.fields?.T1CornerPredict1 +
           ")";
-        match.fields.PredictedOdds = handicapData[0]?.fields.T1CornerOdds;
+        match.fields.PredictedOdds = Number(handicapData[0]?.fields.T1CornerOdds);
         match.fields.Results =
           handicapData[0]?.fields.T1CornerResult?.toUpperCase();
       } else if (
@@ -186,7 +186,7 @@ const ModifiedPrediction = async (allData) => {
           "(" +
           handicapData[0]?.fields?.T2CornerPredict1 +
           ")";
-        match.fields.PredictedOdds = handicapData[0].fields?.T2CornerOdds;
+        match.fields.PredictedOdds = Number(handicapData[0]?.fields?.T2CornerOdds);
         match.fields.Results =
           handicapData[0]?.fields.T2CornerResult?.toUpperCase();
       } else {
@@ -196,7 +196,7 @@ const ModifiedPrediction = async (allData) => {
           "(" +
           handicapData[0]?.fields?.TCornerPredict1 +
           ")";
-        match.fields.PredictedOdds = handicapData[0]?.fields?.TCornerOdds;
+        match.fields.PredictedOdds = Number(handicapData[0]?.fields?.TCornerOdds);
         match.fields.Results =
           handicapData[0]?.fields?.TCornerResult?.toUpperCase();
       }
