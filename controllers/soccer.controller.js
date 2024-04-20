@@ -33,17 +33,17 @@ const getAllSoccerMatchesByDate = catchAsync(async (req, res) => {
   const { value, time, timeZone, filter } = req.query;
 
   // for admin seen all matches
-  const today = moment().format("YYYY-MM-DD");
-  const rightDate = moment(today).add(1, "days").format("YYYY-MM-DD");
+  // const today = moment().format("YYYY-MM-DD");
+  // const rightDate = moment(today).add(1, "days").format("YYYY-MM-DD");
 
-  if (req.user.role !== "admin" && rightDate < moment(value).format("YYYY-MM-DD")) {
-    return sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: "Soccer Match retrieved successfully",
-      data: [],
-    });
-  }
+  // if (req.user.role !== "admin" && rightDate < moment(value).format("YYYY-MM-DD")) {
+  //   return sendResponse(res, {
+  //     statusCode: 200,
+  //     success: true,
+  //     message: "Soccer Match retrieved successfully",
+  //     data: [],
+  //   });
+  // }
 
   // Filtering Finished Matches
   if (filter === "finished") {
@@ -175,7 +175,7 @@ const ModifiedPrediction = async (allData) => {
           ")";
         match.fields.PredictedOdds = handicapData[0]?.fields.T1CornerOdds;
         match.fields.Results =
-          handicapData[0]?.fields.T1CornerResult.toUpperCase();
+          handicapData[0]?.fields.T1CornerResult?.toUpperCase();
       } else if (
         handicapData[0]?.fields?.Away.trim().toLowerCase() ===
         match.fields.HandicapMainpage.trim().toLowerCase()
@@ -188,7 +188,7 @@ const ModifiedPrediction = async (allData) => {
           ")";
         match.fields.PredictedOdds = handicapData[0].fields?.T2CornerOdds;
         match.fields.Results =
-          handicapData[0]?.fields.T2CornerResult.toUpperCase();
+          handicapData[0]?.fields.T2CornerResult?.toUpperCase();
       } else {
         match.fields.Prediction =
           "Total" +
@@ -198,7 +198,7 @@ const ModifiedPrediction = async (allData) => {
           ")";
         match.fields.PredictedOdds = handicapData[0]?.fields?.TCornerOdds;
         match.fields.Results =
-          handicapData[0]?.fields?.TCornerResult.toUpperCase();
+          handicapData[0]?.fields?.TCornerResult?.toUpperCase();
       }
     }
   }
