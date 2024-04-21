@@ -98,6 +98,8 @@ const getAccuracy = catchAsync(async (req, res) => {
     allHandicapData.push(...response.data.records);
   }
 
+  // console.log(allHandicapData)
+
   let handicapWin = 0;
   let handicapLost = 0;
   let handicapTotalOdds = 0;
@@ -107,7 +109,8 @@ const getAccuracy = catchAsync(async (req, res) => {
     if (match?.fields?.T1CornerResult) {
       if (match?.fields?.T1CornerResult === "True") {
         handicapWin++;
-        handicapTotalOdds += Number(match?.fields?.T1CornerOdds);
+        handicapTotalOdds += Number(match?.fields?.T1CornerOdds || 0);
+       
       } else {
         handicapLost++;
       }
@@ -115,7 +118,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     if (match?.fields?.T2CornerResult) {
       if (match?.fields?.T2CornerResult === "True") {
         handicapWin++;
-        handicapTotalOdds += Number(match?.fields?.T2CornerOdds);
+        handicapTotalOdds += Number(match?.fields?.T2CornerOdds || 0);
       } else {
         handicapLost++;
       }
@@ -123,7 +126,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     if (match?.fields?.TCornerResult) {
       if (match?.fields?.TCornerResult === "True") {
         handicapWin++;
-        handicapTotalOdds += Number(match?.fields?.TCornerOdds);
+        handicapTotalOdds += Number(match?.fields?.TCornerOdds || 0);
       } else {
         handicapLost++;
       }
@@ -132,7 +135,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     if (match?.fields?.T1GoalUOResult) {
       if (match?.fields?.T1GoalUOResult === "True") {
         handicapWin++;
-        handicapTotalOdds += Number(match?.fields?.T1GoalUOOdds);
+        handicapTotalOdds += Number(match?.fields?.T1GoalUOOdds || 0);
       } else {
         handicapLost++;
       }
@@ -140,7 +143,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     if (match?.fields?.T2GoalUOResult) {
       if (match?.fields?.T2GoalUOResult === "True") {
         handicapWin++;
-        handicapTotalOdds += Number(match?.fields?.T2GoalUOOdds);
+        handicapTotalOdds += Number(match?.fields?.T2GoalUOOdds ||0);
       } else {
         handicapLost++;
       }
@@ -148,12 +151,13 @@ const getAccuracy = catchAsync(async (req, res) => {
     if (match?.fields?.TGoalUOResult) {
       if (match?.fields?.TGoalUOResult === "True") {
         handicapWin++;
-        handicapTotalOdds += Number(match?.fields?.TGoalUOOdds);
+        handicapTotalOdds += Number(match?.fields?.TGoalUOOdds || 0);
       } else {
         handicapLost++;
       }
     }
   }
+  // console.log(handicapTotalOdds)
 
   const handicapTotal = handicapWin + handicapLost;
 
