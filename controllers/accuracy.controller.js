@@ -13,7 +13,7 @@ const getAccuracy = catchAsync(async (req, res) => {
 
   const today = new Date();
 
-  const allSoccerData = [];
+  const allData = [];
 
   for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
     const startDay = i;
@@ -41,8 +41,10 @@ const getAccuracy = catchAsync(async (req, res) => {
       },
     });
 
-    allSoccerData.push(...response.data.records);
+    allData.push(...response.data.records);
   }
+
+  const allSoccerData = await ModifiedPrediction(allData);
 
   const soccerTotalWinMatch = allSoccerData?.filter(
     (m) => m.fields.Results === "TRUE"
@@ -180,3 +182,65 @@ const getAccuracy = catchAsync(async (req, res) => {
 });
 
 module.exports = { getAccuracy };
+
+const ModifiedPrediction = async (allData) => {
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  for (let i = 0; i < allData.length; i++) {
+    if (allData[i]?.fields?.HandicapMainpage) {
+      const match = allData[i];
+      const matchId = match?.fields?.MatchID;
+      const handicapUrl = `${handicapTable}?filterByFormula=AND({MatchID}='${matchId}')`;
+      const handicapResponse = await axios.get(handicapUrl, { headers });
+      const handicapData = handicapResponse.data.records;
+
+      if (
+        handicapData[0]?.fields?.Home.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Home +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T1CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields.T1CornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields.T1CornerResult?.toUpperCase();
+      } else if (
+        handicapData[0]?.fields?.Away.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Away +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T2CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields?.T2CornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields.T2CornerResult?.toUpperCase();
+      } else {
+        match.fields.Prediction =
+          "Total" +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.TCornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields?.TCornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields?.TCornerResult?.toUpperCase();
+      }
+    }
+  }
+
+  return allData;
+};
