@@ -40,6 +40,7 @@ const roiCalculation = catchAsync(async (req, res) => {
             "Results",
             "Date",
             "PredictedOdds",
+            "PickOfTheDay",
           ],
           filterByFormula: `AND(
                           NOT({MatchResults} = BLANK()),
@@ -53,6 +54,16 @@ const roiCalculation = catchAsync(async (req, res) => {
 
       allSoccerData.push(...response.data.records);
     }
+
+    const pickOfTheDayData = allSoccerData.filter(
+      (record) => record.fields.PickOfTheDay === true
+    );
+    const pickOfTheDayDataGroup = groupByDate(pickOfTheDayData);
+    const pickOfTheDayRoi = calculateRoi(
+      pickOfTheDayDataGroup,
+      initialBalance,
+      percent / 100
+    );
 
     const groupData = groupByDate(allSoccerData);
     const proRoi = calculateRoi(groupData, initialBalance, percent / 100);
@@ -72,7 +83,7 @@ const roiCalculation = catchAsync(async (req, res) => {
       meta: {
         total: allSoccerData?.length || 0,
       },
-      data: { basicRoi, proRoi },
+      data: { basicRoi, proRoi, pickOfTheDayRoi },
     });
   } catch (error) {
     sendResponse(res, {
