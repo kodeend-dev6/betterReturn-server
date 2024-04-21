@@ -83,6 +83,7 @@ const roiCalculation = catchAsync(async (req, res) => {
       meta: {
         total: allSoccerData?.length || 0,
       },
+      // data: { basicRoi, proRoi, pickOfTheDayRoi },
       data: { basicRoi, proRoi, pickOfTheDayRoi },
     });
   } catch (error) {
@@ -350,6 +351,8 @@ const calculateRoi = (allData, initialBalance, percent) => {
         const winM = matches.filter(
           (record) => record.fields.Results === "TRUE"
         ).length;
+
+        console.log(winM, matches.length, winOdds, finalBalance, percentInvestment)
 
         if (winM > 0) {
           const avgOdds = winOdds / winM;
