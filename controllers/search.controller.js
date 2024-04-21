@@ -5,6 +5,7 @@ const sendResponse = require("../utils/sendResponse");
 const soccerTable = config.db.soccerTableUrl;
 const csgoTable = config.db.csgoTableUrl;
 const valorantTable = config.db.valorantTableUrl;
+const handicapTable = config.db.handicapTableUrl;
 const apiKey = config.key.apiKey;
 
 const searchGame = catchAsync(async (req, res) => {
@@ -16,8 +17,7 @@ const searchGame = catchAsync(async (req, res) => {
   const escapedSearch = search?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") || "";
 
   const today = new Date();
-  const formattedToday = today.toISOString().split('T')[0];
- 
+  const formattedToday = today.toISOString().split("T")[0];
 
   let filter;
   let table;
@@ -31,8 +31,7 @@ const searchGame = catchAsync(async (req, res) => {
     NOT({Results} = BLANK()),
     {upload}=1 
 )`;
-  }
-  else if (game === "valorant") {
+  } else if (game === "valorant") {
     table = valorantTable;
     filter = `AND(OR(
     REGEX_MATCH(LOWER({Team1}), LOWER('${escapedSearch}')),
@@ -54,29 +53,100 @@ const searchGame = catchAsync(async (req, res) => {
       NOT({MatchResults} = BLANK()),
       {Date} <= '${formattedToday}',
       {upload}=1
-  )`
+  )`;
   }
 
-  const { data: { records } } = await axios.get(table, {
+  const {
+    data: { records },
+  } = await axios.get(table, {
     headers: { Authorization: `Bearer ${apiKey}` },
     params: {
       filterByFormula: filter,
       pageSize: limit,
       offset,
-      sort: [{ field: game === "csgo"? 'Created' : 'Date', direction: 'desc' }]
+      sort: [
+        { field: game === "csgo" ? "Created" : "Date", direction: "desc" },
+      ],
     },
   });
 
+  let soccerData = [];
+
+  if (game === "soccer") {
+    soccerData = await ModifiedPrediction(records);
+  }
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "Search Successful",
-    data: records,
-    meta:{
-      total: records?.length,
-    }
+    data: game === "soccer" ? soccerData : records,
+    meta: {
+      total: game === "soccer" ? soccerData?.length : records?.length,
+    },
   });
 });
 
 module.exports = { searchGame };
+
+const ModifiedPrediction = async (allData) => {
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  for (let i = 0; i < allData.length; i++) {
+    if (allData[i]?.fields?.HandicapMainpage) {
+      const match = allData[i];
+      const matchId = match?.fields?.MatchID;
+      const handicapUrl = `${handicapTable}?filterByFormula=AND({MatchID}='${matchId}')`;
+      const handicapResponse = await axios.get(handicapUrl, { headers });
+      const handicapData = handicapResponse.data.records;
+
+      if (
+        handicapData[0]?.fields?.Home.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Home +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T1CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields.T1CornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields.T1CornerResult?.toUpperCase();
+      } else if (
+        handicapData[0]?.fields?.Away.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Away +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T2CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields?.T2CornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields.T2CornerResult?.toUpperCase();
+      } else {
+        match.fields.Prediction =
+          "Total" +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.TCornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields?.TCornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields?.TCornerResult?.toUpperCase();
+      }
+    }
+  }
+
+  return allData;
+};
