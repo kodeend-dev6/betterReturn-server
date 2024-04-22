@@ -153,6 +153,7 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
               "Results",
               "Date",
               "PredictedOdds",
+              "PickOfTheDay",
             ],
             filterByFormula: `AND(
                           NOT({MatchResults} = BLANK()),
@@ -167,6 +168,13 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
         allSoccerData.push(...response.data.records);
       }
 
+      const pickOfTheDayData = allSoccerData.filter(
+        (record) => record.fields.PickOfTheDay === true
+      );
+
+      const pickOfTheDayDataGroup = groupByDate(pickOfTheDayData);
+      const pickOfTheDayRoi = calculateRoi(pickOfTheDayDataGroup, 1000, 0.15);
+
       const groupData = groupByDate(allSoccerData);
       const weekendData = separateWeekendData(allSoccerData);
       const groupWeekendData = groupByDate(weekendData);
@@ -180,7 +188,7 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
         meta: {
           total: allSoccerData?.length || 0,
         },
-        data: { proRoi, basicRoi },
+        data: { proRoi, basicRoi, pickOfTheDayRoi },
       });
     } catch (error) {
       sendResponse(res, {
@@ -243,6 +251,7 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
               "Results",
               "Date",
               "PredictedOdds",
+              "PickOfTheDay",
             ],
             filterByFormula: `AND(
                           NOT({MatchResults} = BLANK()),
@@ -257,6 +266,13 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
         allSoccerData.push(...response.data.records);
       }
 
+      const pickOfTheDayData = allSoccerData.filter(
+        (record) => record.fields.PickOfTheDay === true
+      );
+
+      const pickOfTheDayDataGroup = groupByDate(pickOfTheDayData);
+      const pickOfTheDayRoi = calculateRoi(pickOfTheDayDataGroup, 1000, 0.15);
+
       const groupData = groupByDate(allSoccerData);
       const weekendData = separateWeekendData(allSoccerData);
       const groupWeekendData = groupByDate(weekendData);
@@ -270,7 +286,7 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
         meta: {
           total: 0,
         },
-        data: { proRoi, basicRoi },
+        data: { proRoi, basicRoi, pickOfTheDayRoi },
       });
     } catch (error) {
       sendResponse(res, {
@@ -352,7 +368,7 @@ const calculateRoi = (allData, initialBalance, percent) => {
           (record) => record.fields.Results === "TRUE"
         ).length;
 
-        console.log(winM, matches.length, winOdds, finalBalance, percentInvestment)
+        // console.log(winM, matches.length, winOdds, finalBalance, percentInvestment)
 
         if (winM > 0) {
           const avgOdds = winOdds / winM;
