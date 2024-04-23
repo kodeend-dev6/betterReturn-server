@@ -3,6 +3,7 @@ const config = require("../config/config");
 const soccerTable = config.db.soccerTableUrl;
 const csgoTable = config.db.csgoTableUrl;
 const valorantTable = config.db.valorantTableUrl;
+const handicapTable = config.db.handicapTableUrl;
 const apiKey = config.key.apiKey;
 
 
@@ -36,7 +37,10 @@ const getPickOfDay = async (req, res) => {
             }),
         ]);
 
-        let combinedData = [...data1.data.records, ...data2.data.records, ...data3.data.records]
+
+        const soccerData = await ModifiedPrediction(data1?.data?.records);
+
+        let combinedData = [...soccerData , ...data2.data.records, ...data3.data.records]
 
         res.json(combinedData);
     } catch (error) {
@@ -46,3 +50,61 @@ const getPickOfDay = async (req, res) => {
 };
 
 module.exports = { getPickOfDay }
+
+
+const ModifiedPrediction = async (allData) => {
+
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+    };
+  
+    for (let i = 0; i < allData.length; i++) {
+      if (allData[i]?.fields?.HandicapMainpage) {
+        const match = allData[i];
+        const matchId = match?.fields?.MatchID;
+        const handicapUrl = `${handicapTable}?filterByFormula=AND({MatchID}='${matchId}')`;
+        const handicapResponse = await axios.get(handicapUrl, { headers });
+        const handicapData = handicapResponse.data.records;
+  
+        if (
+          handicapData[0]?.fields?.Home.trim().toLowerCase() ===
+          match.fields.HandicapMainpage.trim().toLowerCase()
+        ) {
+          match.fields.Prediction =
+            handicapData[0]?.fields?.Home +
+            " Corner Kicks" +
+            "(" +
+            handicapData[0]?.fields?.T1CornerPredict1 +
+            ")";
+          match.fields.PredictedOdds = Number(handicapData[0]?.fields.T1CornerOdds);
+          match.fields.Results =
+            handicapData[0]?.fields.T1CornerResult?.toUpperCase();
+        } else if (
+          handicapData[0]?.fields?.Away.trim().toLowerCase() ===
+          match.fields.HandicapMainpage.trim().toLowerCase()
+        ) {
+          match.fields.Prediction =
+            handicapData[0]?.fields?.Away +
+            " Corner Kicks" +
+            "(" +
+            handicapData[0]?.fields?.T2CornerPredict1 +
+            ")";
+          match.fields.PredictedOdds = Number(handicapData[0]?.fields?.T2CornerOdds);
+          match.fields.Results =
+            handicapData[0]?.fields.T2CornerResult?.toUpperCase();
+        } else {
+          match.fields.Prediction =
+            "Total" +
+            " Corner Kicks" +
+            "(" +
+            handicapData[0]?.fields?.TCornerPredict1 +
+            ")";
+          match.fields.PredictedOdds = Number(handicapData[0]?.fields?.TCornerOdds);
+          match.fields.Results =
+            handicapData[0]?.fields?.TCornerResult?.toUpperCase();
+        }
+      }
+    }
+  
+    return allData;
+  };
