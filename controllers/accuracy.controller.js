@@ -29,10 +29,9 @@ const getAccuracy = catchAsync(async (req, res) => {
     const response = await axios.get(soccerTable, {
       headers: { Authorization: `Bearer ${apiKey}` },
       params: {
-        fields: ["Results", "Date", "PredictedOdds"],
+        // fields: ["Results", "Date", "PredictedOdds"],
         filterByFormula: `AND(
                     NOT({MatchResults} = BLANK()),
-                    NOT({Prediction} = BLANK()),
                     {upload}=1,
                     {Date} >= '${formattedStartDate}',
                     {Date} <= '${formattedEndDate}'
@@ -44,7 +43,9 @@ const getAccuracy = catchAsync(async (req, res) => {
     allData.push(...response.data.records);
   }
 
+
   const allSoccerData = await ModifiedPrediction(allData);
+
 
   const soccerTotalWinMatch = allSoccerData?.filter(
     (m) => m.fields.Results === "TRUE"
