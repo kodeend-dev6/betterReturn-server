@@ -3,6 +3,9 @@ const catchAsync = require("../utils/errors/catchAsync");
 const fetcher = require("../utils/fetcher/airTableFetcher");
 const sendResponse = require("../utils/sendResponse");
 const soccerTable = config.db.soccerTableUrl;
+const handicapTable = config.db.handicapTableUrl;
+const apiKey = config.key.apiKey;
+const axios = require("axios");
 
 const DAYS_PER_REQUEST = 10;
 
@@ -18,7 +21,7 @@ const roiCalculation = catchAsync(async (req, res) => {
   try {
     const today = new Date();
 
-    const allSoccerData = [];
+    const allData = [];
 
     for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
       const startDay = i;
@@ -33,18 +36,19 @@ const roiCalculation = catchAsync(async (req, res) => {
 
       const response = await fetcher.get(soccerTable, {
         params: {
-          fields: [
-            "HomeTeam",
-            "AwayTeam",
-            "Prediction",
-            "Results",
-            "Date",
-            "PredictedOdds",
-            "PickOfTheDay",
-          ],
+          // fields: [
+          //   "HomeTeam",
+          //   "AwayTeam",
+          //   "Prediction",
+          //   "Results",
+          //   "Date",
+          //   "PredictedOdds",
+          //   "PickOfTheDay",
+          // ],
           filterByFormula: `AND(
+                          OR(NOT({Prediction} = BLANK()),
+                          NOT({HandicapMainpage} = BLANK())),
                           NOT({MatchResults} = BLANK()),
-                          NOT({Prediction} = BLANK()),
                           {upload}=1,
                           {Date} >= '${formattedStartDate}',
                           {Date} <= '${formattedEndDate}'
@@ -52,8 +56,10 @@ const roiCalculation = catchAsync(async (req, res) => {
         },
       });
 
-      allSoccerData.push(...response.data.records);
+      allData.push(...response.data.records);
     }
+
+    const allSoccerData = await ModifiedPrediction(allData);
 
     const pickOfTheDayData = allSoccerData.filter(
       (record) => record.fields.PickOfTheDay === true
@@ -131,7 +137,7 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
 
       const days = 7;
 
-      const allSoccerData = [];
+      const allData = [];
 
       for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
         const startDay = i;
@@ -146,18 +152,20 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
 
         const response = await fetcher.get(soccerTable, {
           params: {
-            fields: [
-              "HomeTeam",
-              "AwayTeam",
-              "Prediction",
-              "Results",
-              "Date",
-              "PredictedOdds",
-              "PickOfTheDay",
-            ],
+            // fields: [
+            //   "HomeTeam",
+            //   "AwayTeam",
+            //   "Prediction",
+            //   "Results",
+            //   "Date",
+            //   "PredictedOdds",
+            //   "PickOfTheDay",
+            //   "HandicapMainpage",
+            // ],
             filterByFormula: `AND(
+                          OR(NOT({Prediction} = BLANK()),
+                          NOT({HandicapMainpage} = BLANK())),
                           NOT({MatchResults} = BLANK()),
-                          NOT({Prediction} = BLANK()),
                           {upload}=1,
                           {Date} >= '${formattedStartDate}',
                           {Date} <= '${formattedEndDate}'
@@ -165,8 +173,10 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
           },
         });
 
-        allSoccerData.push(...response.data.records);
+        allData.push(...response.data.records);
       }
+
+      const allSoccerData = await ModifiedPrediction(allData);
 
       const pickOfTheDayData = allSoccerData.filter(
         (record) => record.fields.PickOfTheDay === true
@@ -229,7 +239,7 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
         0
       ).getDate();
 
-      const allSoccerData = [];
+      const allData = [];
 
       for (let i = 0; i < parseInt(days); i += DAYS_PER_REQUEST) {
         const startDay = i;
@@ -244,18 +254,20 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
 
         const response = await fetcher.get(soccerTable, {
           params: {
-            fields: [
-              "HomeTeam",
-              "AwayTeam",
-              "Prediction",
-              "Results",
-              "Date",
-              "PredictedOdds",
-              "PickOfTheDay",
-            ],
+            // fields: [
+            //   "HomeTeam",
+            //   "AwayTeam",
+            //   "Prediction",
+            //   "Results",
+            //   "Date",
+            //   "PredictedOdds",
+            //   "PickOfTheDay",
+            //   "HandicapMainpage",
+            // ],
             filterByFormula: `AND(
+                          OR(NOT({Prediction} = BLANK()),
+                          NOT({HandicapMainpage} = BLANK())),
                           NOT({MatchResults} = BLANK()),
-                          NOT({Prediction} = BLANK()),
                           {upload}=1,
                           {Date} >= '${formattedStartDate}',
                           {Date} <= '${formattedEndDate}'
@@ -263,8 +275,10 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
           },
         });
 
-        allSoccerData.push(...response.data.records);
+        allData.push(...response.data.records);
       }
+
+      const allSoccerData = await ModifiedPrediction(allData);
 
       const pickOfTheDayData = allSoccerData.filter(
         (record) => record.fields.PickOfTheDay === true
@@ -300,6 +314,68 @@ const soccerPlanRoi = catchAsync(async (req, res) => {
 });
 
 module.exports = { roiCalculation, soccerPlanRoi };
+
+const ModifiedPrediction = async (allData) => {
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  for (let i = 0; i < allData.length; i++) {
+    if (allData[i]?.fields?.HandicapMainpage) {
+      const match = allData[i];
+      const matchId = match?.fields?.MatchID;
+      const handicapUrl = `${handicapTable}?filterByFormula=AND({MatchID}='${matchId}')`;
+      const handicapResponse = await axios.get(handicapUrl, { headers });
+      const handicapData = handicapResponse.data.records;
+
+      if (
+        handicapData[0]?.fields?.Home.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Home +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T1CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields.T1CornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields.T1CornerResult?.toUpperCase();
+      } else if (
+        handicapData[0]?.fields?.Away.trim().toLowerCase() ===
+        match.fields.HandicapMainpage.trim().toLowerCase()
+      ) {
+        match.fields.Prediction =
+          handicapData[0]?.fields?.Away +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.T2CornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields?.T2CornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields.T2CornerResult?.toUpperCase();
+      } else {
+        match.fields.Prediction =
+          "Total" +
+          " Corner Kicks" +
+          "(" +
+          handicapData[0]?.fields?.TCornerPredict1 +
+          ")";
+        match.fields.PredictedOdds = Number(
+          handicapData[0]?.fields?.TCornerOdds
+        );
+        match.fields.Results =
+          handicapData[0]?.fields?.TCornerResult?.toUpperCase();
+      }
+    }
+  }
+
+  return allData;
+};
 
 const groupByDate = (allData) => {
   // Grouping allSoccerData by Date

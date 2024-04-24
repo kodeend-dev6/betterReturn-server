@@ -31,6 +31,8 @@ const getAccuracy = catchAsync(async (req, res) => {
       params: {
         // fields: ["Results", "Date", "PredictedOdds"],
         filterByFormula: `AND(
+                    OR(NOT({Prediction} = BLANK()),
+                    NOT({HandicapMainpage} = BLANK())),
                     NOT({MatchResults} = BLANK()),
                     {upload}=1,
                     {Date} >= '${formattedStartDate}',
@@ -43,9 +45,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     allData.push(...response.data.records);
   }
 
-
   const allSoccerData = await ModifiedPrediction(allData);
-
 
   const soccerTotalWinMatch = allSoccerData?.filter(
     (m) => m.fields.Results === "TRUE"
@@ -111,7 +111,6 @@ const getAccuracy = catchAsync(async (req, res) => {
       if (match?.fields?.T1CornerResult === "True") {
         handicapWin++;
         handicapTotalOdds += Number(match?.fields?.T1CornerOdds || 0);
-       
       } else {
         handicapLost++;
       }
@@ -144,7 +143,7 @@ const getAccuracy = catchAsync(async (req, res) => {
     if (match?.fields?.T2GoalUOResult) {
       if (match?.fields?.T2GoalUOResult === "True") {
         handicapWin++;
-        handicapTotalOdds += Number(match?.fields?.T2GoalUOOdds ||0);
+        handicapTotalOdds += Number(match?.fields?.T2GoalUOOdds || 0);
       } else {
         handicapLost++;
       }
